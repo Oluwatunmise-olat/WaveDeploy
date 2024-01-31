@@ -1,17 +1,18 @@
 package cmd
 
 import (
-	"fmt"
-
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
 	"github.com/spf13/cobra"
 )
 
-// logoutCmd represents the logout command
 var logoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Logout of your wave-deploy account",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("logout called")
+		s := initializeSpinner(" Logging Off ...", "Successfully Logged Out\n")
+		s.Start()
+		auth.LogoutAccount()
+		s.Stop()
 	},
 }
 
