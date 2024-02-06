@@ -4,6 +4,12 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/db"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"gorm.io/gorm"
+	"sync"
+)
+
+var (
+	accountsRepository        *AccountsRepository
+	accountRepositoryInitOnce sync.Once
 )
 
 type AccountsRepository struct {
@@ -11,9 +17,13 @@ type AccountsRepository struct {
 }
 
 func InitializeAccountsRepository() *AccountsRepository {
-	return &AccountsRepository{
-		DB: db.DB,
-	}
+	accountRepositoryInitOnce.Do(func() {
+		accountsRepository = &AccountsRepository{
+			DB: db.DB,
+		}
+	})
+
+	return accountsRepository
 }
 
 func (ar *AccountsRepository) GetAccountByEmail(email string) (*models.Accounts, error) {

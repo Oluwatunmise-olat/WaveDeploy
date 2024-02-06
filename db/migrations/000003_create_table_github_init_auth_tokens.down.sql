@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS github_init_auth_tokens;

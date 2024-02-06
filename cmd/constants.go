@@ -45,10 +45,10 @@ func BasePromptValidator(errorMessage string) func(string) error {
 	}
 }
 
-func initializeSpinner(suffix, finalMessage string) *spinner.Spinner {
+func initializeSpinner(prefix, finalMessage string) *spinner.Spinner {
 	s := spinner.New(spinner.CharSets[9], 100*time.Millisecond)
-	if len(suffix) > 0 {
-		s.Suffix = suffix
+	if len(prefix) > 0 {
+		s.Prefix = prefix
 	}
 
 	if len(finalMessage) > 0 {

@@ -25,7 +25,7 @@ func initializeAuthentication() {
 	email := GetPromptInput(emailPromptCmd, nil)
 	password := GetPromptInput(passwordPromptCmd, nil)
 
-	s := initializeSpinner(" Authenticating ...", fmt.Sprintf("Logged in as %s\n", email))
+	s := initializeSpinner(" Authenticating ... ", fmt.Sprintf("Logged in as %s\n", email))
 
 	s.Start()
 	if err := auth.AuthenticateAccount(email, password); err != nil {

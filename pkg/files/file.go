@@ -28,3 +28,13 @@ func PathExists(path string) bool {
 func GetDirectoryFromPath(dir string) string {
 	return filepath.Dir(dir)
 }
+
+func GetFileContent(path string) ([]byte, error) {
+	bytes, err := os.ReadFile(path)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bytes, nil
+}
