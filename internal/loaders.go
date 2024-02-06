@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/db"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/db"
 	"github.com/joho/godotenv"
 )
 

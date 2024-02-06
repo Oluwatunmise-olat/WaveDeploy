@@ -1,7 +1,7 @@
 package respository
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/db"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/db"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"gorm.io/gorm"
 	"sync"

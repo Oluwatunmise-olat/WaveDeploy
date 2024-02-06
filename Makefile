@@ -28,7 +28,7 @@ db-migrate-make:
         echo "$$HELP_MESSAGE"; \
         exit 1; \
 	fi
-	migrate create -ext sql -dir db/migrations -seq $(migration_filename)
+	migrate create -ext sql -dir internal/db/migrations -seq $(migration_filename)
 
 db-migrate-up:
 	@if [ -z "$(mysql_username)" ] || [ -z "$(mysql_password)" ]; then \
@@ -36,7 +36,7 @@ db-migrate-up:
         echo "$$HELP_MESSAGE"; \
         exit 1; \
 	fi
-	migrate -path db/migrations -database "mysql://$(mysql_username):$(mysql_password)@tcp(localhost:3324)/wave_deploy_db" -verbose up
+	migrate -path internal/db/migrations -database "mysql://$(mysql_username):$(mysql_password)@tcp(localhost:3324)/wave_deploy_db" -verbose up
 
 db-migrate-down:
 	@if [ -z "$(mysql_username)" ] || [ -z "$(mysql_password)" ]; then \
@@ -44,4 +44,4 @@ db-migrate-down:
         echo "$$HELP_MESSAGE"; \
         exit 1; \
 	fi
-	migrate -path db/migrations -database "mysql://$(mysql_username):$(mysql_password)@tcp(localhost:3324)/wave_deploy_db" -verbose down
+	migrate -path internal/db/migrations -database "mysql://$(mysql_username):$(mysql_password)@tcp(localhost:3324)/wave_deploy_db" -verbose down
