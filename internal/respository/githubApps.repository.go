@@ -16,7 +16,7 @@ type GithubAppsRepository struct {
 	DB *gorm.DB
 }
 
-func InitializeGithubAppsRepository() *GithubAppsRepository {
+func (gar *GithubAppsRepository) initializeGithubAppsRepository() *GithubAppsRepository {
 	githubAppsRepositoryInitOnce.Do(func() {
 		githubAppsRepository = &GithubAppsRepository{
 			DB: db.DB,
@@ -28,17 +28,17 @@ func InitializeGithubAppsRepository() *GithubAppsRepository {
 
 func (gar *GithubAppsRepository) GetGithubAppByInstallationId(installationId string) (*models.GithubApps, error) {
 	var githubApp models.GithubApps
-	err := gar.DB.First(&githubApp, "installation_id = ?", installationId).Error
+	err := gar.initializeGithubAppsRepository().DB.First(&githubApp, "installation_id = ?", installationId).Error
 	return &githubApp, err
 }
 
 func (gar *GithubAppsRepository) GetGithubAppByAccountId(accountId string) (*models.GithubApps, error) {
 	var githubApp models.GithubApps
-	err := gar.DB.First(&githubApp, "account_id = ?", accountId).Error
+	err := gar.initializeGithubAppsRepository().DB.First(&githubApp, "account_id = ?", accountId).Error
 	return &githubApp, err
 }
 
 func (gar *GithubAppsRepository) CreateGithubApp(githubApps models.GithubApps) error {
-	err := gar.DB.Create(githubApps).Error
+	err := gar.initializeGithubAppsRepository().DB.Create(githubApps).Error
 	return err
 }

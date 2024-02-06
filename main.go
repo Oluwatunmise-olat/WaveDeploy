@@ -1,20 +1,16 @@
 package main
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/cmd"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal"
 )
 
 func main() {
 	internal.BootstrapApp()
-	cmd.Execute()
 }
 
-// http handler
-// webhook handler
-
 // TODO's
-// Connect Github
+// Disconnect Github
+// Webhook Delivery Security (sha 256)
 // domains stuff (CNAME)
 // Get project envs wave-deploy envs <project>
 // Set secret

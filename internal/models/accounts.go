@@ -1,12 +1,13 @@
 package models
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
 )
 
 type Accounts struct {
-	Id             string    `gorm:"primaryKey"`
+	Id             uuid.UUID `gorm:"primaryKey"`
 	UserName       string    `gorm:"column:username"`
 	Email          string    `gorm:"column:email"`
 	Password       string    `gorm:"column:password"`

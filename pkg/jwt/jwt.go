@@ -4,11 +4,12 @@ import (
 	"crypto/rsa"
 	"errors"
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"os"
 	"time"
 )
 
-func GenerateJWT(accountId string) (string, error) {
+func GenerateJWT(accountId uuid.UUID) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(2 * time.Hour).Unix()
@@ -40,23 +41,23 @@ func GenerateGithubAppJWT(privateKey *rsa.PrivateKey) (string, error) {
 func VerifyJWT(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("auth token tampered")
+			return nil, errors.New("auth token tampered\n")
 		}
 
 		return []byte(os.Getenv("APP_KEY")), nil
 	})
 
 	if err != nil {
-		return "", errors.New("auth token expired. please login again")
+		return "", errors.New("auth token expired. please login again\n")
 	}
 
 	if !token.Valid {
-		return "", errors.New("auth token expired. please login again")
+		return "", errors.New("auth token expired. please login again\n")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", errors.New("unable to extract claims")
+		return "", errors.New("unable to extract claims\n")
 	}
 	// Type Assertion
 	return claims["account_id"].(string), nil

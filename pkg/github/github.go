@@ -18,19 +18,16 @@ var (
 )
 
 func ConnectAppToGithub(state string) string {
-	connectGithubUrl := os.Getenv("CONNECT_TO_GITHUB_URL")
+	connectGithubUrl := os.Getenv("GITHUB_APP_PUBLIC_LINK")
 	parsedUrl, _ := url.Parse(connectGithubUrl)
+	parsedUrl = parsedUrl.JoinPath("/installations/new")
 
 	urlParams := url.Values{}
-	urlParams.Add("response_type", "code")
-	urlParams.Add("client_id", os.Getenv("GITHUB_CLIENT_ID"))
-	urlParams.Add("redirect_uri", os.Getenv("CONNECT_TO_GITHUB_REDIRECT_URL")+fmt.Sprintf("?state=%s", state))
+	urlParams.Add("state", state)
 
 	parsedUrl.RawQuery = urlParams.Encode()
 	return parsedUrl.String()
 }
-
-func ConnectRepositoryToApp() {}
 
 func AuthenticateAsGithubApp(installationId string) (string, error) {
 	urlPath := fmt.Sprintf("/app/installations/%s/access_tokens", installationId)
@@ -83,12 +80,6 @@ func GetGithubAppJWT() (string, error) {
 
 	return token, nil
 }
-
-func InstallGithubApp() string {
-	return fmt.Sprintf("%s/installations/new", os.Getenv("GITHUB_APP_PUBLIC_LINK"))
-}
-
-func RequestDeviceCode() {}
 
 func GetAllAccountInstallations() (any, error) {
 	token, err := GetGithubAppJWT()

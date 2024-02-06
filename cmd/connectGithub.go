@@ -6,6 +6,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/github"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var connectGithubCmd = &cobra.Command{
@@ -18,6 +19,7 @@ var connectGithubCmd = &cobra.Command{
 		if err != nil {
 			s.FinalMSG = err.Error()
 			s.Stop()
+			os.Exit(1)
 		}
 		ctx := cmd.Context()
 		ctx = context.WithValue(ctx, "accountId", accountId)
@@ -40,7 +42,7 @@ func connectToGithub(cmd *cobra.Command) {
 
 	accountConnected := github.IsAccountConnectedAlreadyToGithub(accountId.(string))
 	if accountConnected {
-		s.FinalMSG = "Github account connected"
+		s.FinalMSG = "Github account connected\n"
 		s.Stop()
 		return
 	}
