@@ -9,6 +9,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/random"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/structs"
 	"log"
+	"os"
 	"time"
 )
 
@@ -21,6 +22,10 @@ func IsAccountConnectedAlreadyToGithub(accountId string) bool {
 func GetConnectToGithubUrl(accountId string) string {
 	base64String := hashers.EncodeStringToBase64(accountId)
 	return github.ConnectAppToGithub(base64String)
+}
+
+func GetConnectGithubRepositoryUrl() string {
+	return os.Getenv("GITHUB_APP_PUBLIC_LINK") + "/installations/select_target"
 }
 
 // TODO: Validate webhook source

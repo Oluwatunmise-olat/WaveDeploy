@@ -1,40 +1,40 @@
-/*
-Copyright © 2024 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
 	"fmt"
-
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/github"
 	"github.com/spf13/cobra"
 )
 
-// connectRepositoryCmd represents the connectRepository command
 var connectRepositoryCmd = &cobra.Command{
-	Use:   "connectRepository",
+	Use:   "connect-repository",
 	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	PreRun: func(cmd *cobra.Command, args []string) {
+		ctx := cmd.Context()
+		IsAuthenticated(ctx, "", cmd)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("connectRepository called")
+		connectGithubRepositoryToAppInstallation(cmd)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(connectRepositoryCmd)
+}
 
-	// Here you will define your flags and configuration settings.
+func connectGithubRepositoryToAppInstallation(cmd *cobra.Command) {
+	accountId := cmd.Context().Value("accountId")
+	s := initializeSpinner("", "")
+	s.Start()
+	accountConnected := github.IsAccountConnectedAlreadyToGithub(accountId.(string))
 
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// connectRepositoryCmd.PersistentFlags().String("foo", "", "A help for foo")
+	if !accountConnected {
+		s.FinalMSG = "Account not connected to github. Please connect with `wave-deploy connect-github`"
+		s.Stop()
+		return
+	}
 
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// connectRepositoryCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	connectToGithubLink := github.GetConnectGithubRepositoryUrl()
+	s.FinalMSG = fmt.Sprintf("Click on this link to connect a repository to account: %s\n", connectToGithubLink)
+	s.Stop()
 }

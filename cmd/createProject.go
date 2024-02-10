@@ -69,6 +69,7 @@ func createProject(cmd *cobra.Command) {
 	if err != nil {
 		fmt.Sprintf(err.Error())
 	}
+	fmt.Println("Project created ✨")
 }
 
 // No linked project found. Run railway link to connect to a project, and a service.
