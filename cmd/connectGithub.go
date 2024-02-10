@@ -1,30 +1,17 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/github"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var connectGithubCmd = &cobra.Command{
 	Use:   "connect-github",
-	Short: "A brief description of connect github",
+	Short: "Connect your github account to your wave-deploy account for seamless deployment",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		s := initializeSpinner("Checking github connection", "")
-		s.Start()
-		accountId, err := auth.GetAuthTokenDetails()
-		if err != nil {
-			s.FinalMSG = err.Error()
-			s.Stop()
-			os.Exit(1)
-		}
 		ctx := cmd.Context()
-		ctx = context.WithValue(ctx, "accountId", accountId)
-		cmd.SetContext(ctx)
-		s.Stop()
+		IsAuthenticated(ctx, "Checking github connection", cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		connectToGithub(cmd)

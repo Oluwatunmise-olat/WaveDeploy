@@ -44,12 +44,15 @@ func GetAuthTokenDetails() (string, error) {
 	}
 
 	accountId, err := jwt.VerifyJWT(string(content))
+	if err != nil {
+		return "", err
+	}
 
 	accountRepository := respository.AccountsRepository{}
 	account, err := accountRepository.GetAccountById(accountId)
 
 	if account == nil && err != nil {
-		return "", errors.New("auth token expired. please login again\n")
+		return "", errors.New("Unauthorized. Please create an account with `wave-deploy create-account`")
 	}
 	return accountId, err
 }

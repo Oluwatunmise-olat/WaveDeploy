@@ -6,7 +6,7 @@ Usage:
 	make db-migrate-up mysql_username=<mysql_username> mysql_password=<mysql_password>
 	make db-migrate-down mysql_username=<mysql_username> mysql_password=<mysql_password>
 Example:
-    make migrate migration_name=create_table_accounts
+    make db-migrate-make migration_filename=create_table_accounts
     make db-migrate-up mysql_username=test mysql_password=test_password
     make db-migrate-down mysql_username=test mysql_password=test_password
 endef

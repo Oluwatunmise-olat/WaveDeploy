@@ -1,6 +1,7 @@
 package github
 
 import (
+	"errors"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/respository"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/github"
@@ -22,6 +23,9 @@ func GetConnectToGithubUrl(accountId string) string {
 	return github.ConnectAppToGithub(base64String)
 }
 
+// TODO: Validate webhook source
+// Handle case of app disconnection
+// https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
 func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 	accountRepository := respository.AccountsRepository{}
 	account, err := accountRepository.GetAccountById(hashers.DecodeBase64ToString(payload.State))
@@ -49,4 +53,27 @@ func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 	if err = githubAppRepository.CreateGithubApp(newGithubApp); err != nil {
 		log.Fatalln(err)
 	}
+}
+
+func GetAccountConnectedRepositories(accountId string) ([]structs.GithubAInstallationRepositories, error) {
+	githubAppRepository := respository.GithubAppsRepository{}
+	githubApp, _ := githubAppRepository.GetGithubAppByAccountId(accountId)
+
+	if githubApp == nil {
+		return nil, errors.New("Account not connected to github. Please connect with `wave-deploy connect-github`")
+	}
+
+	installationAuthToken, err := github.AuthenticateAsGithubAppInstallation(githubApp.InstallationId)
+	if err != nil {
+		//TODO: Handle better
+		return nil, err
+	}
+
+	ghRepositories, err := github.GetInstallationRepositories(installationAuthToken)
+	if err != nil {
+		//TODO: Handle better
+		return nil, err
+	}
+
+	return ghRepositories, nil
 }

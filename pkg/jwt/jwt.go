@@ -25,12 +25,13 @@ func GenerateJWT(accountId uuid.UUID) (string, error) {
 
 func GenerateGithubAppJWT(privateKey *rsa.PrivateKey) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
-		"iat": time.Now().Unix() - 60,        // issued at time, 60 seconds in the past
-		"exp": time.Now().Unix() + (10 * 60), // expiration time (10 minutes)
-		"iss": os.Getenv("GITHUB_APP_ID"),    // GitHub App's identifier
+		"iat": time.Now().Unix(),
+		"exp": time.Now().Unix() + (10 * 60),
+		"iss": os.Getenv("GITHUB_APP_ID"),
+		"alg": "RS256",
 	})
 
-	tokenString, err := token.SignedString([]byte(os.Getenv("APP_KEY")))
+	tokenString, err := token.SignedString(privateKey)
 	if err != nil {
 		return "", err
 	}
@@ -41,23 +42,22 @@ func GenerateGithubAppJWT(privateKey *rsa.PrivateKey) (string, error) {
 func VerifyJWT(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("auth token tampered\n")
+			return nil, errors.New("Unauthorized. Please login with `wave-deploy login`\n")
 		}
-
 		return []byte(os.Getenv("APP_KEY")), nil
 	})
 
 	if err != nil {
-		return "", errors.New("auth token expired. please login again\n")
+		return "", errors.New("Unauthorized. Please login with `wave-deploy login`\n")
 	}
 
 	if !token.Valid {
-		return "", errors.New("auth token expired. please login again\n")
+		return "", errors.New("Unauthorized. Please login with `wave-deploy login`\n")
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		return "", errors.New("unable to extract claims\n")
+		return "", errors.New("Unauthorized. Please login with `wave-deploy login`\n")
 	}
 	// Type Assertion
 	return claims["account_id"].(string), nil

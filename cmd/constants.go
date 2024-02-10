@@ -1,16 +1,19 @@
 package cmd
 
 import (
+	"context"
 	"errors"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
 	"github.com/briandowns/spinner"
 	"github.com/manifoldco/promptui"
+	"github.com/spf13/cobra"
 	"os"
 	"time"
 )
 
 var (
 	PromptTemplate = promptui.PromptTemplates{
-		Prompt:  "{{ . }}",
+		Prompt:  "{{ . | green }}",
 		Valid:   "{{ . | blue }}",
 		Invalid: "{{ . | red }}",
 		Success: "{{ . | bold }}",
@@ -27,10 +30,33 @@ func GetPromptInput(promptCommand Prompt, validator func(string) error) string {
 		Templates: &PromptTemplate,
 		Validate:  validator,
 		Mask:      promptCommand.mask,
+		IsConfirm: promptCommand.confirm,
 	}
 	value, err := prompt.Run()
+
 	if err != nil {
 		os.Exit(1)
+
+	}
+
+	return value
+}
+
+func GetPromptSelector(promptCommand Prompt, validator func(string) error) string {
+	if validator == nil {
+		validator = BasePromptValidator(promptCommand.errorMessage)
+	}
+
+	prompt := &promptui.Select{
+		Label: promptCommand.label,
+		Items: promptCommand.items,
+	}
+
+	_, value, err := prompt.Run()
+
+	if err != nil {
+		os.Exit(1)
+
 	}
 
 	return value
@@ -56,4 +82,18 @@ func initializeSpinner(prefix, finalMessage string) *spinner.Spinner {
 	}
 
 	return s
+}
+
+func IsAuthenticated(ctx context.Context, msg string, cobraCmd *cobra.Command) {
+	s := initializeSpinner(msg, "")
+	s.Start()
+	accountId, err := auth.GetAuthTokenDetails()
+	if err != nil {
+		s.FinalMSG = err.Error()
+		s.Stop()
+		os.Exit(1)
+	}
+	ctx = context.WithValue(ctx, "accountId", accountId)
+	cobraCmd.SetContext(ctx)
+	s.Stop()
 }
