@@ -19,3 +19,4 @@ func main() {
 // scale command
 // Get running processes
 // Service Discovery
+// Add cli auto suggestion

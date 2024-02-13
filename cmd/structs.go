@@ -6,4 +6,5 @@ type Prompt struct {
 	mask         rune
 	confirm      bool
 	items        []string
+	allowEdit    bool
 }
