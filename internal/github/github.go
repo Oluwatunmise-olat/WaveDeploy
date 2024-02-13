@@ -20,7 +20,7 @@ func IsAccountConnectedAlreadyToGithub(accountId string) bool {
 }
 
 func GetConnectToGithubUrl(accountId string) string {
-	base64String := hashers.EncodeStringToBase64(accountId)
+	base64String := hashers.EncodeIt(accountId)
 	return github.ConnectAppToGithub(base64String)
 }
 
@@ -33,7 +33,7 @@ func GetConnectGithubRepositoryUrl() string {
 // https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
 func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 	accountRepository := respository.AccountsRepository{}
-	account, err := accountRepository.GetAccountById(hashers.DecodeBase64ToString(payload.State))
+	account, err := accountRepository.GetAccountById(hashers.DecodeIt(payload.State))
 
 	if account == nil && err != nil {
 		return
@@ -48,7 +48,7 @@ func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 
 	newGithubApp := models.GithubApps{
 		InstallationId: payload.InstallationId,
-		AccountId:      hashers.DecodeBase64ToString(payload.State),
+		AccountId:      hashers.DecodeIt(payload.State),
 		Code:           payload.Code,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),

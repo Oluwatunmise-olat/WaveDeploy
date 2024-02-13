@@ -13,6 +13,8 @@ type Projects struct {
 	GithubRepoUrl  string    `gorm:"column:github_repo_url"`
 	GithubBranch   string    `gorm:"column:github_branch"`
 	GithubCommit   string    `gorm:"column:github_commit"`
+	BuildCommand   string    `gorm:"build_command"`
+	RunCommand     string    `gorm:"run_command"`
 	IsLive         bool      `gorm:"column:is_live"`
 	CreatedAt      time.Time `gorm:"column:created_at"`
 	UpdatedAt      time.Time `gorm:"column:updated_at"`

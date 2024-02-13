@@ -26,10 +26,10 @@ func init() {
 
 func createProject(cmd *cobra.Command) {
 	projectNamePromptCmd := Prompt{errorMessage: "Please provide a project name", label: "> Project name: "}
-	projectName := GetPromptInput(projectNamePromptCmd, nil)
+	project := GetPromptInput(projectNamePromptCmd, nil)
 
 	accountId := cmd.Context().Value("accountId").(string)
-	nameTaken, _ := projects.IsProjectNameTaken(accountId, projectName)
+	nameTaken, _ := projects.IsProjectNameTaken(accountId, project)
 
 	if nameTaken {
 		fmt.Println("Project with name already exists")
@@ -71,9 +71,3 @@ func createProject(cmd *cobra.Command) {
 	}
 	fmt.Println("Project created ✨")
 }
-
-// No linked project found. Run railway link to connect to a project, and a service.
-// project name
-//> Select a project royal-back
-//> Select an environment production
-//> Select a service Abstract-Syntax-Tree

@@ -3,7 +3,6 @@ package respository
 import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/db"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
-	"gorm.io/gorm"
 	"sync"
 )
 
@@ -11,10 +10,6 @@ var (
 	githubAppsRepository         *GithubAppsRepository
 	githubAppsRepositoryInitOnce sync.Once
 )
-
-type GithubAppsRepository struct {
-	DB *gorm.DB
-}
 
 func (gar *GithubAppsRepository) initializeGithubAppsRepository() *GithubAppsRepository {
 	githubAppsRepositoryInitOnce.Do(func() {
