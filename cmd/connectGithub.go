@@ -25,16 +25,16 @@ func init() {
 func connectToGithub(cmd *cobra.Command) {
 	s := initializeSpinner("", "")
 	s.Start()
-	accountId := cmd.Context().Value("accountId")
+	accountId := cmd.Context().Value("accountId").(string)
 
-	accountConnected := github.IsAccountConnectedAlreadyToGithub(accountId.(string))
+	accountConnected := github.IsAccountConnectedAlreadyToGithub(accountId)
 	if accountConnected {
 		s.FinalMSG = "Github account connected\n"
 		s.Stop()
 		return
 	}
 
-	connectToGithubLink := github.GetConnectToGithubUrl(accountId.(string))
+	connectToGithubLink := github.GetConnectToGithubUrl(accountId)
 	s.FinalMSG = fmt.Sprintf("Click on this link to authenticate with GitHub: %s\n", connectToGithubLink)
 	s.Stop()
 }

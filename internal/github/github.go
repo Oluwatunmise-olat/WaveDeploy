@@ -2,6 +2,7 @@ package github
 
 import (
 	"errors"
+	"fmt"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/respository"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/github"
@@ -10,6 +11,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/structs"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -81,4 +83,17 @@ func GetAccountConnectedRepositories(accountId string) ([]structs.GithubAInstall
 	}
 
 	return ghRepositories, nil
+}
+
+func GetRepositoryCloneUrl(installationId, githubUrl string) (string, error) {
+	installationAuthToken, err := github.AuthenticateAsGithubAppInstallation(installationId)
+	if err != nil {
+		return "", err
+	}
+
+	repoUrl := strings.Split(githubUrl, "git://")[1]
+	userName := strings.Split(repoUrl, "/")[1]
+
+	cloneUrl := fmt.Sprintf("https://%s:%s@%s", userName, installationAuthToken, repoUrl)
+	return cloneUrl, nil
 }

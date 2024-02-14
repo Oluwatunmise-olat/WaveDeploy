@@ -154,7 +154,7 @@ func initializeDeployment(cmd *cobra.Command, projectId uuid.UUID) {
 	}
 
 	// Containerize application
-	// -> create a dockerfile
+	// -> create a dockerfile ✅
 	// -> add public key to .authorized-keys. How about *fingerprint?
 	// -> scp docker file and setup vm (install docker and all needed deps)
 	// -> Orchestrate application with or without replicas (docker swarm)
