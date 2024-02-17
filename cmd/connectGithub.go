@@ -10,8 +10,7 @@ var connectGithubCmd = &cobra.Command{
 	Use:   "connect-github",
 	Short: "Connect your github account to your wave-deploy account for seamless deployment",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		IsAuthenticated(ctx, "Checking github connection", cmd)
+		IsAuthenticated(cmd.Context(), "Checking github connection", cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		connectToGithub(cmd)

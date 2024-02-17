@@ -9,14 +9,15 @@ func main() {
 }
 
 // TODO's
-// Disconnect Github
-// Webhook Delivery Security (sha 256)
-// domains stuff (CNAME)
-// Get project envs wave-deploy envs <project>
-// Set secret
-// wave-deploy create <project>
+
+// Security
+// Validate Incoming Webhook Delivery Security (sha 256)
+
+// Cli Stuff
+// Add cli Auto Suggestion
+// Add More Commands
+// Auto-Scale Based on metrics from prometheus command
 // wave-deploy get all projects
-// scale command
-// Get running processes
-// Service Discovery
-// Add cli auto suggestion
+// update envs (should retrigger app redeployment)
+// Domains stuff (CNAME)
+// Disconnect Github

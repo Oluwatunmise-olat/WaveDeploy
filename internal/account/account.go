@@ -1,4 +1,4 @@
-package auth
+package account
 
 import (
 	"errors"
@@ -84,4 +84,16 @@ func saveAuthenticationToken(accountId uuid.UUID) {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func GetAccountInstallationId(accountId string) (string, error) {
+	githubAppRepository := respository.GithubAppsRepository{}
+
+	installationId, err := githubAppRepository.GetGithubAppInstallationIdByAccountId(accountId)
+	if err != nil {
+		return "", errors.New("Account not connected to github. Please connect with `wave-deploy connect-github`")
+	}
+
+	return installationId, nil
+
 }

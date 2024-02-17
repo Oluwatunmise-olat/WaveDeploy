@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/account"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +28,7 @@ func initializeAuthentication() {
 	s := initializeSpinner(" Authenticating ... ", fmt.Sprintf("Logged in as %s\n", email))
 
 	s.Start()
-	if err := auth.AuthenticateAccount(email, password); err != nil {
+	if err := account.AuthenticateAccount(email, password); err != nil {
 		s.FinalMSG = err.Error()
 	}
 	s.Stop()

@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/account"
 	"github.com/spf13/cobra"
 )
 
@@ -11,7 +11,7 @@ var logoutCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		s := initializeSpinner(" Logging Off ... ", "Successfully Logged Out\n")
 		s.Start()
-		auth.LogoutAccount()
+		account.LogoutAccount()
 		s.Stop()
 	},
 }

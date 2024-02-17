@@ -8,3 +8,11 @@ type Prompt struct {
 	items        []string
 	allowEdit    bool
 }
+
+type DeploymentOptions struct {
+	BuildPath      string
+	PrivateKeyPath string
+	PublicIPV4Addr string
+	VmUser         string
+	Envs           ProjectEnvs
+}

@@ -12,8 +12,7 @@ var createProjectCmd = &cobra.Command{
 	Use:   "create-project",
 	Short: "Create a new web project",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		IsAuthenticated(ctx, "", cmd)
+		IsAuthenticated(cmd.Context(), "", cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		createProject(cmd)
@@ -25,28 +24,44 @@ func init() {
 }
 
 func createProject(cmd *cobra.Command) {
-	projectNamePromptCmd := Prompt{errorMessage: "Please provide a project name", label: "> Project name: "}
-	project := GetPromptInput(projectNamePromptCmd, nil)
+	_projectName := PromptForProjectName()
 
 	accountId := cmd.Context().Value("accountId").(string)
-	nameTaken, _ := projects.IsProjectNameTaken(accountId, project)
+	nameTaken, _ := projects.IsProjectNameTaken(accountId, _projectName)
 
 	if nameTaken {
 		fmt.Println("Project with name already exists")
 		return
 	}
 
+	selectedRepository := PromptForGithubRepository(accountId)
+
+	err := projects.CreateProject(accountId, projectName, &selectedRepository)
+	if err != nil {
+		fmt.Println("Error creating project:", err)
+		return
+	}
+
+	fmt.Println("Project created ✨")
+}
+
+// PromptForProjectName Prompts the user for the project name
+func PromptForProjectName() string {
+	projectNamePromptCmd := Prompt{errorMessage: "Please provide a project name", label: "> Project name: "}
+	return GetPromptInput(projectNamePromptCmd, nil)
+}
+
+// PromptForGithubRepository Prompts user to select a GitHub repository
+func PromptForGithubRepository(accountId string) structs.GithubAInstallationRepositories {
 	codeSourceGHPromptCmd := Prompt{label: "> Select project from github (y/n)?: "}
 	codeSourceIsGH := GetPromptInput(codeSourceGHPromptCmd, nil)
-
 	var selectedRepository structs.GithubAInstallationRepositories
 
 	if codeSourceIsGH == "y" {
 		ghRepositories, err := github.GetAccountConnectedRepositories(accountId)
-
 		if err != nil {
-			fmt.Errorf(err.Error())
-			return
+			fmt.Println("Error fetching GitHub repositories:", err)
+			return structs.GithubAInstallationRepositories{}
 		}
 
 		var ghRepositoryNames []string
@@ -65,9 +80,5 @@ func createProject(cmd *cobra.Command) {
 		}
 	}
 
-	err := projects.CreateProject(accountId, projectName, &selectedRepository)
-	if err != nil {
-		fmt.Sprintf(err.Error())
-	}
-	fmt.Println("Project created ✨")
+	return selectedRepository
 }

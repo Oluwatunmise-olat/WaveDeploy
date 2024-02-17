@@ -58,3 +58,9 @@ func (pr *ProjectsRepository) GetProjectByNameAndAccount(name, accountId string)
 	err := pr.initializeProjectsRepository().DB.Where("account_id = ? and name = ?", accountId, name).First(&project).Error
 	return &project, err
 }
+
+func (pr *ProjectsRepository) GetProjectById(projectId, accountId string) (*models.Projects, error) {
+	var project models.Projects
+	err := pr.initializeProjectsRepository().DB.Where("account_id = ? and id = ?", accountId, projectId).First(&project).Error
+	return &project, err
+}

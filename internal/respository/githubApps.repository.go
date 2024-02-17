@@ -27,6 +27,12 @@ func (gar *GithubAppsRepository) GetGithubAppByInstallationId(installationId str
 	return &githubApp, err
 }
 
+func (gar *GithubAppsRepository) GetGithubAppInstallationIdByAccountId(accountId string) (string, error) {
+	var githubApp models.GithubApps
+	err := gar.initializeGithubAppsRepository().DB.First(&githubApp, "account_id = ?", accountId).Select("installation_id").Error
+	return githubApp.InstallationId, err
+}
+
 func (gar *GithubAppsRepository) GetGithubAppByAccountId(accountId string) (*models.GithubApps, error) {
 	var githubApp models.GithubApps
 	err := gar.initializeGithubAppsRepository().DB.First(&githubApp, "account_id = ?", accountId).Error

@@ -3,7 +3,7 @@ package cmd
 import (
 	"context"
 	"errors"
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/auth"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/account"
 	"github.com/briandowns/spinner"
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
@@ -87,7 +87,7 @@ func initializeSpinner(prefix, finalMessage string) *spinner.Spinner {
 func IsAuthenticated(ctx context.Context, msg string, cobraCmd *cobra.Command) {
 	s := initializeSpinner(msg, "")
 	s.Start()
-	accountId, err := auth.GetAuthTokenDetails()
+	accountId, err := account.GetAuthTokenDetails()
 	if err != nil {
 		s.FinalMSG = err.Error()
 		s.Stop()

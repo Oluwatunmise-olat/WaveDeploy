@@ -3,6 +3,7 @@ package files
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 )
 
 func WriteToFileWithOverride(content string, path string) error {
@@ -37,4 +38,9 @@ func GetFileContent(path string) ([]byte, error) {
 	}
 
 	return bytes, nil
+}
+
+func GetCurrentPathRootDirectory() string {
+	_, b, _, _ := runtime.Caller(0)
+	return filepath.Dir(b)
 }

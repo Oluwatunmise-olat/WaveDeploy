@@ -10,8 +10,7 @@ var connectRepositoryCmd = &cobra.Command{
 	Use:   "connect-repository",
 	Short: "A brief description of your command",
 	PreRun: func(cmd *cobra.Command, args []string) {
-		ctx := cmd.Context()
-		IsAuthenticated(ctx, "", cmd)
+		IsAuthenticated(cmd.Context(), "", cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		connectGithubRepositoryToAppInstallation(cmd)

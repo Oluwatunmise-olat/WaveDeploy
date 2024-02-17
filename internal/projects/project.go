@@ -73,3 +73,8 @@ func GetProjectByName(accountId, projectName string) (*models.Projects, error) {
 	projectRepository := respository.ProjectsRepository{}
 	return projectRepository.GetProjectByNameAndAccount(projectName, accountId)
 }
+
+func GetProjectById(projectId, accountId string) (*models.Projects, error) {
+	projectRepository := respository.ProjectsRepository{}
+	return projectRepository.GetProjectById(projectId, accountId)
+}
