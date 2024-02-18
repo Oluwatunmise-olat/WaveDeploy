@@ -78,7 +78,9 @@ func preDeploymentChecks(accountID string) (*models.Projects, error) {
 func deployProject(cmd *cobra.Command, project *models.Projects) {
 	accountId := getAccountID(cmd)
 	updatedPayload := models.Projects{}
+	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
 	buildCommand, runCommand, Envs, err := promptDeploymentOptions()
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,13 +102,12 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		log.Fatal("Failed to build application Dockerfile: ", err)
 	}
 
-	// TODO:: Collect vm credentials (username, privateKeyPath, publicIp)
 	deploymentOptions := DeploymentOptions{
 		Envs:           Envs,
 		BuildPath:      buildPath,
-		VmUser:         "******",
-		PublicIPV4Addr: "******",
-		PrivateKeyPath: "******",
+		VmUser:         vmUser,
+		PublicIPV4Addr: ipv4Addr,
+		PrivateKeyPath: privateKeyPath,
 	}
 	if err = deployAndStartApplication(deploymentOptions); err != nil {
 		log.Fatal("Failed to deploy and start application:", err)
@@ -121,6 +122,24 @@ func promptDeploymentOptions() (string, string, ProjectEnvs, error) {
 	envs, err := promptForEnvVariables()
 
 	return buildCommand, runCommand, envs, err
+}
+
+func promptDeploymentCredentialsDetails() (string, string, string) {
+	vmUserCommand := promptForVmCommands("User")
+	vmIpCommand := promptForVmCommands("Public Ipv4 Address")
+	vmPrivateKeyPathCommand := promptForVmCommands("Private Key Path")
+
+	return vmUserCommand, vmIpCommand, vmPrivateKeyPathCommand
+}
+
+func promptForVmCommands(title string) string {
+	cmd := Prompt{
+		label:        fmt.Sprintf("Vm %s: ", title),
+		errorMessage: fmt.Sprintf("Please provide vm %s", strings.ToLower(title)),
+	}
+	value := GetPromptInput(cmd, nil)
+
+	return value
 }
 
 func promptForCommand(action, commandType string) (string, error) {
@@ -251,8 +270,7 @@ func buildApplicationDockerfile(accountID string, projectId uuid.UUID, projectEn
 	return executionPath, err
 }
 
-// TODO:: Add nginx or caddy as extra load balancing layer (ssl termination)
-// TODO:: Add letsEncrypt
+// TODO:: Caddy as extra load balancing layer (ssl termination)
 func deployAndStartApplication(opts DeploymentOptions) error {
 	remoteWorkDir := fmt.Sprintf("/home/%s/app/.builder", opts.VmUser)
 	fullBuildPath := filepath.Join(opts.BuildPath, ".nixpacks")
