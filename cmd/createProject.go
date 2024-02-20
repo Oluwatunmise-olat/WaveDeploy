@@ -36,7 +36,7 @@ func createProject(cmd *cobra.Command) {
 
 	selectedRepository := PromptForGithubRepository(accountId)
 
-	err := projects.CreateProject(accountId, projectName, &selectedRepository)
+	err := projects.CreateProject(accountId, _projectName, &selectedRepository)
 	if err != nil {
 		fmt.Println("Error creating project:", err)
 		return

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"golang.org/x/crypto/ssh"
 	"io"
 	"io/fs"
 	"log"
@@ -231,8 +232,9 @@ func buildApplicationDockerfile(accountID string, projectId uuid.UUID, projectEn
 			return "", fmt.Errorf("failed to get GitHub repository clone URL: %v", err)
 		}
 
-		appPath = "."
+		appPath = executionPath
 	}
+
 	args := []string{"-n", project.Name, "-w", string(executionPath), "-p", appPath}
 
 	if githubCloneUrl != "" {
@@ -272,37 +274,53 @@ func buildApplicationDockerfile(accountID string, projectId uuid.UUID, projectEn
 
 // TODO:: Caddy as extra load balancing layer (ssl termination)
 func deployAndStartApplication(opts DeploymentOptions) error {
-	remoteWorkDir := fmt.Sprintf("/home/%s/app/.builder", opts.VmUser)
+	remoteWorkDir := fmt.Sprintf("/home/%s/app/.builder/.nixpacks", opts.VmUser)
 	fullBuildPath := filepath.Join(opts.BuildPath, ".nixpacks")
 
-	auth, err := goph.Key(opts.PrivateKeyPath, "")
+	client, err := EstablishSSHConnection(opts)
 	if err != nil {
-		return fmt.Errorf("failed to create SSH key: %v", err)
-	}
-
-	client, err := goph.New(opts.VmUser, opts.PublicIPV4Addr, auth)
-	if err != nil {
-		return fmt.Errorf("failed to create SSH client: %v", err)
+		return err
 	}
 	defer client.Close()
 
-	client.Run(fmt.Sprintf("mkdir -p %s", remoteWorkDir))
+	_, err = client.Run(fmt.Sprintf("mkdir -p %s", remoteWorkDir))
+	if err != nil {
+		return err
+	}
+
 	err = UploadFileToRemoteRecursively(client, fullBuildPath, remoteWorkDir)
 	if err != nil {
 		return err
 	}
+
 	exec.Command("rm -rf", opts.BuildPath)
 
 	// Change to Work Directory
-	client.Run(fmt.Sprintf("cd %s", fullBuildPath))
+	_, err = client.Run(fmt.Sprintf("cd %s", remoteWorkDir))
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Run(fmt.Sprintf("sudo mv %s/Dockerfile /home/%s/app/.builder", remoteWorkDir, opts.VmUser))
+	if err != nil {
+		return err
+	}
+
 	// Build Docker Image
-	client.Run(fmt.Sprintf("sudo docker build -t %s:latest .", projectName))
+	_, err = client.Run(fmt.Sprintf("sudo docker build -t %s:latest .", projectName))
+	if err != nil {
+		return err
+	}
+
 	// Initialize Docker Swarm
-	client.Run("sudo docker swarm init")
+	_, err = client.Run("sudo docker swarm init")
+	if err != nil {
+		return err
+	}
 
 	// Deploy Command
 	// TODO:: Make replicas setting flexible
-	createCmd := fmt.Sprintf("docker service create --name %s --replicas 1 --publish published=8080,target=80", projectName)
+	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas 1 --publish published=8080,target=80", projectName)
 	// Environment variables map
 	for key, value := range opts.Envs {
 		createCmd += fmt.Sprintf(" --env %s=%s", key, value)
@@ -310,8 +328,37 @@ func deployAndStartApplication(opts DeploymentOptions) error {
 	createCmd += fmt.Sprintf(" %s:latest", projectName)
 
 	// Deploy service
-	//out, err := client.Run(createCmd)
-	return nil
+	out, err := client.Run(createCmd)
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(string(out))
+	return err
+}
+
+func EstablishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
+	privateKeyBytes, err := os.ReadFile(opts.PrivateKeyPath)
+	if err != nil {
+		return nil, errors.New("An error occurred reading private key file")
+	}
+
+	privateKey, err := ssh.ParsePrivateKey(privateKeyBytes)
+	if err != nil {
+		return nil, errors.New("An error occurred parsing private key")
+	}
+
+	client, err = goph.NewConn(&goph.Config{
+		Auth: []ssh.AuthMethod{
+			ssh.PublicKeys(privateKey),
+		},
+		User:     opts.VmUser,
+		Callback: ssh.InsecureIgnoreHostKey(),
+		Timeout:  60 * time.Second,
+		Port:     22,
+		Addr:     opts.PublicIPV4Addr,
+	})
+	return
 }
 
 func UploadFileToRemoteRecursively(client *goph.Client, localFolder, remoteFolder string) error {

@@ -24,7 +24,7 @@ while getopts ":e:b:p:s:n:l:w:" opt; do
 done
 
 # Check if required arguments are provided
-if [[ (-z $start_cmd) || (-z $build_cmd) || (-z $app_name) || (-z $WORK_DIR) || (-z $app_path) ]]; then
+if [[ (-z $app_name) || (-z $WORK_DIR) || (-z $app_path) ]]; then
   usage
   exit 1
 fi
@@ -52,13 +52,20 @@ for env in "${envs[@]}"; do
   env_args+=("--env" "$env")
 done
 
+# Include build and start commands if provided
+if [[ ! -z $build_cmd ]]; then
+  build_args+=( "--build-cmd" "$build_cmd" )
+fi
+
+if [[ ! -z $start_cmd ]]; then
+  build_args+=( "--start-cmd" "$start_cmd" )
+fi
 
 # Build the application
 nixpacks build "${app_path}" \
-  --start-cmd "$start_cmd" \
-  --build-cmd "$build_cmd" \
   --platform linux/amd64 \
   --name "$app_name" \
+   "${build_args[@]}" \
   "${env_args[@]}" \
   --out .
 
