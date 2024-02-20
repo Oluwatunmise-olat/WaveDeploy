@@ -16,7 +16,14 @@ function check_nixpacks_installed() {
     fi
 }
 
-# Check if Docker is already installed
+function check_caddy_installed() {
+    if ! command -v caddy &>/dev/null; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 if check_docker_installed; then
     echo "Docker is already installed on vm."
 else
@@ -38,7 +45,7 @@ else
     echo "Docker has been successfully installed."
 fi
 
-# Check if Nixpacks is already installed
+
 if check_nixpacks_installed; then
     echo "Nixpacks is already installed."
 else
@@ -51,5 +58,24 @@ else
         echo "Nixpacks has been successfully installed."
     else
         echo "Failed to install Nixpacks."
+    fi
+fi
+
+
+if check_caddy_installed; then
+    echo "Caddy is already installed."
+else
+    echo "Installing Caddy..."
+
+    sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https curl
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+    curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+    sudo apt update
+    sudo apt install caddy
+
+    if check_caddy_installed; then
+        echo "Caddy has been successfully installed."
+    else
+        echo "Failed to install Caddy."
     fi
 fi
