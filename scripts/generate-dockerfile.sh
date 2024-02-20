@@ -1,20 +1,21 @@
 #!/bin/bash
 
 usage() {
-  echo "Usage: wave-deploy [-e <env1=value1> [-e <env2=value2> ...]] -s <start-cmd> -b <build-cmd> -n <app-name> -w <work directory> -p <app path>"
+  echo "Usage: wave-deploy [-e <env1=value1> [-e <env2=value2> ...]] -s <start-cmd> -b <build-cmd> -n <app-name> -w <work directory> -p <app path> -o <output path>"
 }
 
 # Parse options
 envs=()
-while getopts ":e:b:p:s:n:l:w:" opt; do
+while getopts ":e:b:p:s:n:l:w:o:" opt; do
   case $opt in
     s) start_cmd=$OPTARG ;;
     b) build_cmd=$OPTARG ;;
     n) app_name=$OPTARG ;;
     e) envs+=("$OPTARG") ;;
     l) repo_url=$OPTARG ;;
-    w) WORK_DIR=$OPTARG ;;
+    w) work_dir=$OPTARG ;;
     p) app_path=$OPTARG ;;
+    o) output_path=$OPTARG ;;
     ?)
       echo "Invalid option: -$OPTARG"
       usage
@@ -24,13 +25,13 @@ while getopts ":e:b:p:s:n:l:w:" opt; do
 done
 
 # Check if required arguments are provided
-if [[ (-z $app_name) || (-z $WORK_DIR) || (-z $app_path) ]]; then
+if [[ (-z $app_name) || (-z $work_dir) || (-z $app_path) || (-z $output_path) ]]; then
   usage
   exit 1
 fi
 
 # Navigate to the work directory
-cd $WORK_DIR || exit 1
+cd $work_dir || exit 1
 
 # Clone repository if provided
 if [[ ! -z $repo_url ]]; then
@@ -67,9 +68,11 @@ nixpacks build "${app_path}" \
   --name "$app_name" \
    "${build_args[@]}" \
   "${env_args[@]}" \
-  --out .
+  --out "${output_path}" &> /dev/null
 
-#  &> /dev/null
+mv "${output_path}/.nixpacks/Dockerfile" "${output_path}/.nixpacks/Dockerfile.wavedeploy"
+mv "${output_path}/.nixpacks/Dockerfile.wavedeploy" "${app_path}/"
+mv "${output_path}/.nixpacks" "${app_path}/"
 
 if [[ $? -eq 0 ]]; then
   echo "✅ Application Build Successful"

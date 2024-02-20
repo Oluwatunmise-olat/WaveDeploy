@@ -53,30 +53,26 @@ func PromptForProjectName() string {
 
 // PromptForGithubRepository Prompts user to select a GitHub repository
 func PromptForGithubRepository(accountId string) structs.GithubAInstallationRepositories {
-	codeSourceGHPromptCmd := Prompt{label: "> Select project from github (y/n)?: "}
-	codeSourceIsGH := GetPromptInput(codeSourceGHPromptCmd, nil)
 	var selectedRepository structs.GithubAInstallationRepositories
 
-	if codeSourceIsGH == "y" {
-		ghRepositories, err := github.GetAccountConnectedRepositories(accountId)
-		if err != nil {
-			fmt.Println("Error fetching GitHub repositories:", err)
-			return structs.GithubAInstallationRepositories{}
-		}
+	ghRepositories, err := github.GetAccountConnectedRepositories(accountId)
+	if err != nil {
+		fmt.Println("Error fetching GitHub repositories:", err)
+		return structs.GithubAInstallationRepositories{}
+	}
 
-		var ghRepositoryNames []string
-		for _, repo := range ghRepositories {
-			ghRepositoryNames = append(ghRepositoryNames, repo.Name)
-		}
+	var ghRepositoryNames []string
+	for _, repo := range ghRepositories {
+		ghRepositoryNames = append(ghRepositoryNames, repo.Name)
+	}
 
-		selectRepoPromptCmd := Prompt{label: "> Select a repository ", items: ghRepositoryNames}
-		selectedRepositoryName := GetPromptSelector(selectRepoPromptCmd, nil)
+	selectRepoPromptCmd := Prompt{label: "> Select a repository ", items: ghRepositoryNames}
+	selectedRepositoryName := GetPromptSelector(selectRepoPromptCmd, nil)
 
-		for _, repo := range ghRepositories {
-			if repo.Name == selectedRepositoryName {
-				selectedRepository = repo
-				break
-			}
+	for _, repo := range ghRepositories {
+		if repo.Name == selectedRepositoryName {
+			selectedRepository = repo
+			break
 		}
 	}
 

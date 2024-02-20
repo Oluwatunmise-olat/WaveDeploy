@@ -8,11 +8,19 @@ function check_docker_installed() {
     fi
 }
 
+function check_nixpacks_installed() {
+    if ! command -v nixpacks &>/dev/null; then
+        return 1
+    else
+        return 0
+    fi
+}
+
 # Check if Docker is already installed
 if check_docker_installed; then
     echo "Docker is already installed on vm."
 else
-    echo "Docker is not installed. Installing Docker..."
+    echo "Installing Docker..."
 
     # Update the Package Repository
     sudo apt update -y
@@ -30,4 +38,18 @@ else
     echo "Docker has been successfully installed."
 fi
 
-#sudo systemctl status docker
+# Check if Nixpacks is already installed
+if check_nixpacks_installed; then
+    echo "Nixpacks is already installed."
+else
+    echo "Installing Nixpacks..."
+
+    # Install Nixpacks
+    curl -sSL https://nixpacks.com/install.sh | bash
+
+    if check_nixpacks_installed; then
+        echo "Nixpacks has been successfully installed."
+    else
+        echo "Failed to install Nixpacks."
+    fi
+fi

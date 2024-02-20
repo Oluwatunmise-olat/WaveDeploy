@@ -1,15 +1,12 @@
 package cmd
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
-	"io"
 	"io/fs"
 	"log"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
@@ -26,6 +23,16 @@ import (
 	"github.com/google/uuid"
 	"github.com/melbahja/goph"
 )
+
+// todo:
+// more checks around user disconnecting github app
+// docker prune for exited containers or app crashes
+// Make replicas setting flexible
+// Dynamic ports on vm
+
+// Minimal needed for cli deploy
+// - missing cli commands
+// - the above stuff
 
 type ProjectEnvs map[string]string
 
@@ -80,6 +87,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 	accountId := getAccountID(cmd)
 	updatedPayload := models.Projects{}
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
+
 	buildCommand, runCommand, Envs, err := promptDeploymentOptions()
 
 	if err != nil {
@@ -98,19 +106,27 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		log.Fatal(err)
 	}
 
-	buildPath, err := buildApplicationDockerfile(accountId, project.Id, Envs)
+	deploymentOptions := DeploymentOptions{
+		Envs:           Envs,
+		VmUser:         vmUser,
+		PublicIPV4Addr: ipv4Addr,
+		PrivateKeyPath: privateKeyPath,
+		RemoteHomeDir:  fmt.Sprintf("/home/%s", vmUser),
+		RemoteAppDir:   fmt.Sprintf("/home/%s/app/.builder", vmUser),
+	}
+
+	remoteAppDir, err := buildApplicationDockerfile(BuildApplicationOptions{
+		AccountId:            accountId,
+		ProjectId:            project.Id,
+		ProjectUpdatePayload: updatedPayload,
+		Envs:                 Envs,
+		DeploymentOptions:    deploymentOptions,
+	})
 	if err != nil {
 		log.Fatal("Failed to build application Dockerfile: ", err)
 	}
 
-	deploymentOptions := DeploymentOptions{
-		Envs:           Envs,
-		BuildPath:      buildPath,
-		VmUser:         vmUser,
-		PublicIPV4Addr: ipv4Addr,
-		PrivateKeyPath: privateKeyPath,
-	}
-	if err = deployAndStartApplication(deploymentOptions); err != nil {
+	if err = deployAndStartApplication(deploymentOptions, remoteAppDir); err != nil {
 		log.Fatal("Failed to deploy and start application:", err)
 	}
 
@@ -212,30 +228,58 @@ func updateProjectAndCreateEnvs(accountID string, project *models.Projects, upda
 	return projects.UpdateProjectAndCreateEnvs(payload)
 }
 
-func buildApplicationDockerfile(accountID string, projectId uuid.UUID, projectEnvs ProjectEnvs) (string, error) {
-	project, _ := projects.GetProjectById(projectId.String(), accountID)
-	rootDirectory := files.GetCurrentPathRootDirectory()
-	scriptPath := filepath.Join(rootDirectory, "/../../scripts")
-	executionPathBytes, _ := exec.Command("mktemp", "-d").Output()
-	githubCloneUrl := ""
-	appPath, _ := os.Getwd()
+func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
+	project, _ := projects.GetProjectById(opts.ProjectId.String(), opts.AccountId)
+	ghRepoUrl := strings.Split(project.GithubRepoUrl, "/")
+	ghRepoName := strings.ReplaceAll(ghRepoUrl[len(ghRepoUrl)-1], ".git", "")
 
-	executionPath := strings.TrimSpace(string(executionPathBytes))
+	appRootDirectory := files.GetCurrentPathRootDirectory()
+	scriptPath := filepath.Join(appRootDirectory, "/../../scripts")
+	dockerFileScriptPath := fmt.Sprintf("%s/generate-dockerfile.sh", opts.DeploymentOptions.RemoteAppDir)
+	vmSetupScriptPath := fmt.Sprintf("%s/setup-ubuntu-vm.sh", opts.DeploymentOptions.RemoteAppDir)
+	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", ghRepoName)
 
-	if project.GithubRepoUrl != "" {
-		installationId, err := account.GetAccountInstallationId(accountID)
-		if err != nil {
-			return "", fmt.Errorf("failed to get GitHub installation ID: %v", err)
-		}
-		githubCloneUrl, err = github.GetRepositoryCloneUrl(installationId, project.GithubRepoUrl)
-		if err != nil {
-			return "", fmt.Errorf("failed to get GitHub repository clone URL: %v", err)
-		}
+	client, err := establishSSHConnection(opts.DeploymentOptions)
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
 
-		appPath = executionPath
+	_, err = client.Run(fmt.Sprintf("mkdir -p %s", opts.DeploymentOptions.RemoteAppDir))
+	if err != nil {
+		return "", err
 	}
 
-	args := []string{"-n", project.Name, "-w", string(executionPath), "-p", appPath}
+	err = uploadFileToRemoteRecursively(client, scriptPath, opts.DeploymentOptions.RemoteAppDir)
+	if err != nil {
+		return "", err
+	}
+
+	err = makeRemoteFileExecutableMode(client, dockerFileScriptPath)
+	if err != nil {
+		return "", err
+	}
+	err = makeRemoteFileExecutableMode(client, vmSetupScriptPath)
+	if err != nil {
+		return "", err
+	}
+
+	installationId, err := account.GetAccountInstallationId(opts.AccountId)
+	if err != nil {
+		return "", fmt.Errorf("failed to get GitHub installation ID: %v", err)
+	}
+
+	githubCloneUrl, err := github.GetRepositoryCloneUrl(installationId, project.GithubRepoUrl)
+	if err != nil {
+		return "", fmt.Errorf("failed to get GitHub repository clone URL: %v", err)
+	}
+
+	args := []string{
+		"-n", project.Name,
+		"-w", opts.DeploymentOptions.RemoteHomeDir + "/app",
+		"-p", appRemoteDirectory,
+		"-o", opts.DeploymentOptions.RemoteAppDir,
+	}
 
 	if githubCloneUrl != "" {
 		args = append(args, "-l", githubCloneUrl)
@@ -249,78 +293,57 @@ func buildApplicationDockerfile(accountID string, projectId uuid.UUID, projectEn
 		args = append(args, "-s", fmt.Sprintf(`"%s"`, project.RunCommand))
 	}
 
-	for key, value := range projectEnvs {
+	for key, value := range opts.Envs {
 		args = append(args, "-e", fmt.Sprintf("%s=%s", key, value))
 	}
 
-	args = append([]string{filepath.Join(scriptPath, "generate-dockerfile.sh")}, args...)
+	args = append([]string{dockerFileScriptPath}, args...)
+	dockerFileGenerationCommand := "sudo " + strings.Join(args, " ")
+	vmSetupCommand := fmt.Sprintf("sudo %s", vmSetupScriptPath)
 
-	stdout := new(bytes.Buffer)
-	stderr := new(bytes.Buffer)
-
-	cmd := exec.Command("/bin/bash", args...)
-	cmd.Stdout = io.MultiWriter(os.Stdout, stdout)
-	cmd.Stderr = io.MultiWriter(os.Stderr, stderr)
-
-	if err := cmd.Start(); err != nil {
-		fmt.Println("Error starting command:", err)
+	_, err = client.Run(vmSetupCommand)
+	if err != nil {
 		return "", err
 	}
-
-	err := cmd.Wait()
-
-	return executionPath, err
+	_, err = client.Run(dockerFileGenerationCommand)
+	if err != nil {
+		return "", err
+	}
+	return appRemoteDirectory, err
 }
 
 // TODO:: Caddy as extra load balancing layer (ssl termination)
-func deployAndStartApplication(opts DeploymentOptions) error {
-	remoteWorkDir := fmt.Sprintf("/home/%s/app/.builder/.nixpacks", opts.VmUser)
-	fullBuildPath := filepath.Join(opts.BuildPath, ".nixpacks")
-
-	client, err := EstablishSSHConnection(opts)
+func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string) error {
+	client, err := establishSSHConnection(opts)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
-	_, err = client.Run(fmt.Sprintf("mkdir -p %s", remoteWorkDir))
-	if err != nil {
-		return err
-	}
-
-	err = UploadFileToRemoteRecursively(client, fullBuildPath, remoteWorkDir)
-	if err != nil {
-		return err
-	}
-
-	exec.Command("rm -rf", opts.BuildPath)
-
-	// Change to Work Directory
-	_, err = client.Run(fmt.Sprintf("cd %s", remoteWorkDir))
-	if err != nil {
-		return err
-	}
-
-	_, err = client.Run(fmt.Sprintf("sudo mv %s/Dockerfile /home/%s/app/.builder", remoteWorkDir, opts.VmUser))
-	if err != nil {
-		return err
-	}
-
 	// Build Docker Image
-	_, err = client.Run(fmt.Sprintf("sudo docker build -t %s:latest .", projectName))
+	_, err = client.Run(
+		fmt.Sprintf(
+			"sudo docker build -t %s:latest -f %s %s",
+			projectName,
+			remoteAppDirectory+"/Dockerfile.wavedeploy",
+			remoteAppDirectory),
+	)
 	if err != nil {
 		return err
 	}
 
 	// Initialize Docker Swarm
-	_, err = client.Run("sudo docker swarm init")
+	msg, err := client.Run("sudo docker swarm init")
 	if err != nil {
-		return err
+		if !(strings.Contains(string(msg), "This node is already part of a swarm")) {
+			return err
+		} else {
+			err = nil
+		}
 	}
 
 	// Deploy Command
-	// TODO:: Make replicas setting flexible
-	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas 1 --publish published=8080,target=80", projectName)
+	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas 1 --publish 8080:8080 --env PORT=8080", projectName)
 	// Environment variables map
 	for key, value := range opts.Envs {
 		createCmd += fmt.Sprintf(" --env %s=%s", key, value)
@@ -328,16 +351,14 @@ func deployAndStartApplication(opts DeploymentOptions) error {
 	createCmd += fmt.Sprintf(" %s:latest", projectName)
 
 	// Deploy service
-	out, err := client.Run(createCmd)
+	_, err = client.Run(createCmd)
 	if err != nil {
 		return err
 	}
-
-	fmt.Println(string(out))
 	return err
 }
 
-func EstablishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
+func establishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
 	privateKeyBytes, err := os.ReadFile(opts.PrivateKeyPath)
 	if err != nil {
 		return nil, errors.New("An error occurred reading private key file")
@@ -361,7 +382,7 @@ func EstablishSSHConnection(opts DeploymentOptions) (client *goph.Client, err er
 	return
 }
 
-func UploadFileToRemoteRecursively(client *goph.Client, localFolder, remoteFolder string) error {
+func uploadFileToRemoteRecursively(client *goph.Client, localFolder, remoteFolder string) error {
 	return filepath.Walk(localFolder, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -381,4 +402,13 @@ func UploadFileToRemoteRecursively(client *goph.Client, localFolder, remoteFolde
 		}
 		return nil
 	})
+}
+
+func makeRemoteFileExecutableMode(client *goph.Client, path string) (err error) {
+	_, err = client.Run(fmt.Sprintf("sudo chmod 0100 %s", path))
+	return
+}
+
+func getDynamicPort(publicIp string) {
+
 }
