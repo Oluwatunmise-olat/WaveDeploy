@@ -30,3 +30,13 @@ type BuildApplicationOptions struct {
 	Envs                 ProjectEnvs
 	DeploymentOptions    DeploymentOptions
 }
+
+type WebServerTmpl struct {
+	EXTERNAL_PORT           int
+	INTERNAL_LISTENING_PORT int
+}
+
+type SPATmpl struct {
+	EXTERNAL_PORT    int
+	APPLICATION_PATH string
+}

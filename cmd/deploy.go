@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"golang.org/x/crypto/ssh"
@@ -22,6 +23,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/random"
 	"github.com/google/uuid"
 	"github.com/melbahja/goph"
+	"html/template"
 )
 
 // todo:
@@ -239,7 +241,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	vmSetupScriptPath := fmt.Sprintf("%s/setup-ubuntu-vm.sh", opts.DeploymentOptions.RemoteAppDir)
 	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", ghRepoName)
 
-	client, err := establishSSHConnection(opts.DeploymentOptions)
+	client, err := EstablishSSHConnection(opts.DeploymentOptions)
 	if err != nil {
 		return "", err
 	}
@@ -312,9 +314,8 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	return appRemoteDirectory, err
 }
 
-// TODO:: Caddy as extra load balancing layer (ssl termination)
 func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string) error {
-	client, err := establishSSHConnection(opts)
+	client, err := EstablishSSHConnection(opts)
 	if err != nil {
 		return err
 	}
@@ -355,10 +356,15 @@ func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string
 	if err != nil {
 		return err
 	}
+
+	if err = setupAndReloadApiWebServer(client, 8080); err != nil {
+		return err
+	}
+
 	return err
 }
 
-func establishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
+func EstablishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
 	privateKeyBytes, err := os.ReadFile(opts.PrivateKeyPath)
 	if err != nil {
 		return nil, errors.New("An error occurred reading private key file")
@@ -411,4 +417,35 @@ func makeRemoteFileExecutableMode(client *goph.Client, path string) (err error) 
 
 func getDynamicPort(publicIp string) {
 
+}
+
+func setupAndReloadApiWebServer(client *goph.Client, port int) error {
+	payload := WebServerTmpl{
+		EXTERNAL_PORT:           80,
+		INTERNAL_LISTENING_PORT: port,
+	}
+
+	tmpl, err := template.ParseFiles("template.tmpl")
+	if err != nil {
+		return err
+	}
+
+	var buffer bytes.Buffer
+	if err = tmpl.Execute(&buffer, payload); err != nil {
+		return err
+	}
+
+	command := "echo \"" + buffer.String() + "\" | sudo tee /etc/caddy/Caddyfile"
+
+	_, err = client.Run(command)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Run("sudo systemctl reload caddy")
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

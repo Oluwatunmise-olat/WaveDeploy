@@ -4,8 +4,6 @@ import "github.com/Oluwatunmise-olat/WaveDeploy/internal"
 
 func main() {
 	internal.BootstrapApp()
-	//	add extra check for spa or web api
-	// use varying tmpl files
 }
 
 // TODO's

@@ -1,4 +1,3 @@
-{{ .DOMAIN_NAME }}
+:{{ .EXTERNAL_PORT }}
 
-encode gzip
-reverse_proxy :{{ .LISTENING_PORT }}
+reverse_proxy :{{ .INTERNAL_LISTENING_PORT }}
