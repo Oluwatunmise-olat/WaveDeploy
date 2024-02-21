@@ -1,0 +1,7 @@
+{{ .DOMAIN_NAME }}
+
+root * {{ .APPLICATION_PATH }}
+encode gzip
+file_server
+try_files {{ .APPLICATION_PATH }} /index.html
+
