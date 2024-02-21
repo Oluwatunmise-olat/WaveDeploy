@@ -32,10 +32,6 @@ import (
 // Make replicas setting flexible
 // Dynamic ports on vm
 
-// Minimal needed for cli deploy
-// - missing cli commands
-// - the above stuff
-
 type ProjectEnvs map[string]string
 
 var projectName string
@@ -241,7 +237,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	vmSetupScriptPath := fmt.Sprintf("%s/setup-ubuntu-vm.sh", opts.DeploymentOptions.RemoteAppDir)
 	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", ghRepoName)
 
-	client, err := EstablishSSHConnection(opts.DeploymentOptions)
+	client, err := establishSSHConnection(opts.DeploymentOptions)
 	if err != nil {
 		return "", err
 	}
@@ -315,7 +311,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 }
 
 func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string) error {
-	client, err := EstablishSSHConnection(opts)
+	client, err := establishSSHConnection(opts)
 	if err != nil {
 		return err
 	}
@@ -364,7 +360,7 @@ func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string
 	return err
 }
 
-func EstablishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
+func establishSSHConnection(opts DeploymentOptions) (client *goph.Client, err error) {
 	privateKeyBytes, err := os.ReadFile(opts.PrivateKeyPath)
 	if err != nil {
 		return nil, errors.New("An error occurred reading private key file")

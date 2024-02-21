@@ -8,13 +8,16 @@ func main() {
 
 // TODO's
 
-// Security
-// Validate Incoming Webhook Delivery Security (sha 256)
+// Cli Stuff -*
+// Add cli Auto Suggestion - Improvement 18
+// Logs streaming - Improvement 19
+// PR Links - Improvement 19
+// Auto-Scale Based on metrics from prometheus command - Improvement 20
+// better error handling
 
-// Cli Stuff
-// Add cli Auto Suggestion - improvement
-// Add More Cli Commands - improvement
-// Auto-Scale Based on metrics from prometheus command -
-// update envs (should retrigger app redeployment)
-// Domains stuff (CNAME)
-// Disconnect Github
+// redeploy project
+// update project envs
+// Get project envs
+// stop running project
+// delete project
+// get all projects

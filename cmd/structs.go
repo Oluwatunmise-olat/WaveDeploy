@@ -36,7 +36,7 @@ type WebServerTmpl struct {
 	INTERNAL_LISTENING_PORT int
 }
 
-type SPATmpl struct {
+type SpaTmpl struct {
 	EXTERNAL_PORT    int
 	APPLICATION_PATH string
 }

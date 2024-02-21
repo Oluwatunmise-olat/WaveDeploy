@@ -115,9 +115,7 @@ func GetInstallationRepositories(accessToken string) ([]structs.GithubAInstallat
 	}
 
 	if response.StatusCode >= 400 {
-		fmt.Println(string(body))
-		//TODO:: Handle better
-		return nil, errors.New("....")
+		return nil, errors.New("An error occurred fetching installed repositories")
 	}
 
 	var responsePayload structs.GithubAInstallationRepositoriesSuccessResponse

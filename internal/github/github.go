@@ -30,9 +30,6 @@ func GetConnectGithubRepositoryUrl() string {
 	return os.Getenv("GITHUB_APP_PUBLIC_LINK") + "/installations/select_target"
 }
 
-// TODO: Validate webhook source
-// Handle case of app disconnection
-// https://docs.github.com/en/webhooks/using-webhooks/validating-webhook-deliveries
 func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 	accountRepository := respository.AccountsRepository{}
 	account, err := accountRepository.GetAccountById(hashers.DecodeIt(payload.State))
