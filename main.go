@@ -1,6 +1,8 @@
 package main
 
-import "github.com/Oluwatunmise-olat/WaveDeploy/internal"
+import (
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal"
+)
 
 func main() {
 	internal.BootstrapApp()
@@ -17,7 +19,6 @@ func main() {
 
 // redeploy project
 // update project envs
-// Get project envs
 // stop running project
 // delete project
 // get all projects

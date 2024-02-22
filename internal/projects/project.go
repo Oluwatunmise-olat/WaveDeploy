@@ -74,7 +74,21 @@ func GetProjectByName(accountId, projectName string) (*models.Projects, error) {
 	return projectRepository.GetProjectByNameAndAccount(projectName, accountId)
 }
 
+func UpdateProject(updateProjectPayload models.Projects, projectId, accountId uuid.UUID) error {
+	projectRepository := respository.ProjectsRepository{}
+	return projectRepository.UpdateProject(respository.UpdateProjectPayload{
+		ProjectId: projectId,
+		AccountId: accountId,
+		Project:   updateProjectPayload,
+	})
+}
+
 func GetProjectById(projectId, accountId string) (*models.Projects, error) {
 	projectRepository := respository.ProjectsRepository{}
 	return projectRepository.GetProjectById(projectId, accountId)
+}
+
+func GetProjectEnvs(projectId, accountId uuid.UUID) ([]models.Envs, error) {
+	envRepository := respository.EnvsRepository{}
+	return envRepository.GetEnvs(projectId, accountId)
 }

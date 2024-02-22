@@ -68,7 +68,7 @@ func getAccountID(cmd *cobra.Command) string {
 }
 
 func preDeploymentChecks(accountID string) (*models.Projects, error) {
-	project, err := projects.GetProjectByName(accountID, projectName)
+	project, err := projects.GetProjectByName(accountID, strings.TrimSpace(projectName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch project: %v", err)
 	}
@@ -126,6 +126,11 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 
 	if err = deployAndStartApplication(deploymentOptions, remoteAppDir); err != nil {
 		log.Fatal("Failed to deploy and start application:", err)
+	}
+	accountUUId, _ := uuid.Parse(accountId)
+
+	if err = projects.UpdateProject(models.Projects{IsLive: true}, project.Id, accountUUId); err != nil {
+		log.Fatal("Application deployment failed 😭")
 	}
 
 	fmt.Println("Application deployed successfully!")
