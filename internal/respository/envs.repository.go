@@ -48,3 +48,8 @@ func (er *EnvsRepository) GetEnvs(projectId, accountId uuid.UUID) ([]models.Envs
 	err := er.initializeEnvsRepository().DB.Where("account_id = ? and project_id = ? and deleted_at IS NULL", accountId, projectId).Find(&envs).Error
 	return envs, err
 }
+
+func (er *EnvsRepository) DeleteEnvs(projectId, accountId uuid.UUID) error {
+	err := er.initializeEnvsRepository().DB.Delete("account_id = ? and project_id = ?", accountId, projectId).Error
+	return err
+}

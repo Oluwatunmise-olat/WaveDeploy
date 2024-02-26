@@ -17,8 +17,11 @@ func main() {
 // Auto-Scale Based on metrics from prometheus command - Improvement 20
 // better error handling
 
-// redeploy project
-// update project envs
 // stop running project
-// delete project
-// get all projects
+// delete project +
+// get all projects +
+// all db actions should revert if deployment fails
+
+// later once the above is done
+// 1. check for unique env keys before update and on save
+// 2. check app is actually live redeploy

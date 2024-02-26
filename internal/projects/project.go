@@ -92,3 +92,17 @@ func GetProjectEnvs(projectId, accountId uuid.UUID) ([]models.Envs, error) {
 	envRepository := respository.EnvsRepository{}
 	return envRepository.GetEnvs(projectId, accountId)
 }
+
+func DeleteProjectEnvs(projectId, accountId uuid.UUID) error {
+	envRepository := respository.EnvsRepository{}
+	return envRepository.DeleteEnvs(projectId, accountId)
+}
+
+func CreateBatchProjectEnvs(envs []models.Envs) error {
+	envRepository := respository.EnvsRepository{}
+	if err := envRepository.CreateMultipleProjectEnvs(envs, nil); err != nil {
+		return errors.New("An error occurred setting project envs")
+	}
+
+	return nil
+}
