@@ -21,6 +21,7 @@ type DeploymentOptions struct {
 	Envs           ProjectEnvs
 	RemoteAppDir   string
 	RemoteHomeDir  string
+	Replicas       int
 }
 
 type BuildApplicationOptions struct {

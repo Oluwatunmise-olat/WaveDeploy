@@ -61,6 +61,8 @@ func UpdateProjectAndCreateEnvs(upace UpdateProjectAndCreateEnvsPayload) error {
 	}
 
 	if len(upace.Envs) != 0 {
+		_ = envRepository.DeleteEnvs(upace.ProjectId, upace.AccountId)
+
 		if err := envRepository.CreateMultipleProjectEnvs(upace.Envs, dbTransaction); err != nil {
 			return errors.New("An error occurred setting project envs")
 		}
@@ -105,4 +107,9 @@ func CreateBatchProjectEnvs(envs []models.Envs) error {
 	}
 
 	return nil
+}
+
+func GetAllAccountProjects(accountId string) ([]models.Projects, error) {
+	projectRepository := respository.ProjectsRepository{}
+	return projectRepository.GetAllProjectsByAccountId(accountId)
 }

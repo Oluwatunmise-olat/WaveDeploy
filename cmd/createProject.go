@@ -6,6 +6,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/structs"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 var createProjectCmd = &cobra.Command{
@@ -24,7 +25,7 @@ func init() {
 }
 
 func createProject(cmd *cobra.Command) {
-	_projectName := PromptForProjectName()
+	_projectName := strings.TrimSpace(PromptForProjectName())
 
 	accountId := cmd.Context().Value("accountId").(string)
 	nameTaken, _ := projects.IsProjectNameTaken(accountId, _projectName)

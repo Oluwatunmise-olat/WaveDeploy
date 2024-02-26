@@ -64,3 +64,13 @@ func (pr *ProjectsRepository) GetProjectById(projectId, accountId string) (*mode
 	err := pr.initializeProjectsRepository().DB.Where("account_id = ? and id = ?", accountId, projectId).First(&project).Error
 	return &project, err
 }
+
+func (pr *ProjectsRepository) GetAllProjectsByAccountId(accountId string) ([]models.Projects, error) {
+	var projects []models.Projects
+	err := pr.initializeProjectsRepository().DB.
+		Select("name", "github_repo_url", "is_live").
+		Find(&projects).Where("account_id = ?", accountId).
+		Error
+
+	return projects, err
+}

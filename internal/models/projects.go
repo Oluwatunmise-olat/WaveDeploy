@@ -16,6 +16,7 @@ type Projects struct {
 	BuildCommand   string    `gorm:"build_command"`
 	RunCommand     string    `gorm:"run_command"`
 	IsLive         bool      `gorm:"column:is_live"`
+	Replicas       int       `gorm:"column:replicas"`
 	CreatedAt      time.Time `gorm:"column:created_at"`
 	UpdatedAt      time.Time `gorm:"column:updated_at"`
 	gorm.DeletedAt `gorm:"column:deleted_at"`

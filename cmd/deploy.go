@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -29,8 +30,6 @@ import (
 
 // todo:
 // more checks around user disconnecting github app
-// docker prune for exited containers or app crashes
-// Make replicas setting flexible
 // Dynamic ports on vm
 
 type ProjectEnvs map[string]string
@@ -84,8 +83,9 @@ func preDeploymentChecks(accountID string) (*models.Projects, error) {
 func deployProject(cmd *cobra.Command, project *models.Projects) {
 	accountId := getAccountID(cmd)
 	updatedPayload := models.Projects{}
-	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
 
+	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
+	replicas := promptForReplicaCommand()
 	buildCommand, runCommand, Envs, err := promptDeploymentOptions()
 
 	if err != nil {
@@ -94,6 +94,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 
 	updatedPayload.BuildCommand = buildCommand
 	updatedPayload.RunCommand = runCommand
+	updatedPayload.Replicas = replicas
 
 	envsPayload, err := createEnvRecords(accountId, project, Envs)
 	if err != nil {
@@ -111,6 +112,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		PrivateKeyPath: privateKeyPath,
 		RemoteHomeDir:  fmt.Sprintf("/home/%s", vmUser),
 		RemoteAppDir:   fmt.Sprintf("/home/%s/app/.builder", vmUser),
+		Replicas:       replicas,
 	}
 
 	remoteAppDir, err := buildApplicationDockerfile(BuildApplicationOptions{
@@ -130,7 +132,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 	accountUUId, _ := uuid.Parse(accountId)
 
 	if err = projects.UpdateProject(models.Projects{IsLive: true}, project.Id, accountUUId); err != nil {
-		log.Fatal("Application deployment failed 😭")
+		log.Fatal("Application deployment failed 😪")
 	}
 
 	fmt.Println("Application deployed successfully!")
@@ -160,6 +162,28 @@ func promptForVmCommands(title string) string {
 	value := GetPromptInput(cmd, nil)
 
 	return value
+}
+
+func promptForReplicaCommand() int {
+	defaultReplicas := 1
+
+	cmd := Prompt{
+		label: fmt.Sprintf("> Replicas Count (default: %d): ", defaultReplicas),
+	}
+
+	for {
+		value := GetPromptInput(cmd, nil)
+		if value == "" {
+			return defaultReplicas
+		}
+
+		count, err := strconv.Atoi(value)
+		if err == nil {
+			return count
+		}
+
+		fmt.Println("Invalid input. Please enter a numeric value for the replica count.")
+	}
 }
 
 func promptForCommand(action, commandType string) (string, error) {
@@ -201,6 +225,7 @@ func promptForEnvVariables() (ProjectEnvs, error) {
 func createEnvRecords(accountID string, project *models.Projects, Envs ProjectEnvs) ([]models.Envs, error) {
 	envsPayload := make([]models.Envs, 0, len(Envs))
 	accountUUID, _ := uuid.Parse(accountID)
+
 	for key, value := range Envs {
 		encryptedValue, err := hashers.EncryptIt(value, os.Getenv("APP_KEY"))
 		if err != nil {
@@ -228,6 +253,7 @@ func updateProjectAndCreateEnvs(accountID string, project *models.Projects, upda
 		AccountId:            accountIdToUUId,
 		ProjectId:            project.Id,
 	}
+
 	return projects.UpdateProjectAndCreateEnvs(payload)
 }
 
@@ -346,8 +372,14 @@ func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string
 		}
 	}
 
+	deleteStaleContainersCommand := fmt.Sprintf("sudo docker rm $(sudo docker ps -a --filter ancestor=%s -q)", projectName)
+	_, _ = client.Run(deleteStaleContainersCommand)
+
+	deleteImageCommand := fmt.Sprintf("sudo docker rmi %s:latest", projectName)
+	_, _ = client.Run(deleteImageCommand)
+
 	// Deploy Command
-	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas 1 --publish 8080:8080 --env PORT=8080", projectName)
+	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas %d --publish 8080:8080 --env PORT=8080", projectName, opts.Replicas)
 	// Environment variables map
 	for key, value := range opts.Envs {
 		createCmd += fmt.Sprintf(" --env %s=%s", key, value)
