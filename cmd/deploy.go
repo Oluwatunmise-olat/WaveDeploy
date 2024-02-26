@@ -40,14 +40,14 @@ var deployCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		checkGitHubConnection(cmd)
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
 		project, err := preDeploymentChecks(accountId)
 		if err != nil {
-			log.Fatal(err)
-			return
+			return fmt.Errorf("error occurred deploying project: %w", err)
 		}
 		deployProject(cmd, project)
+		return nil
 	},
 }
 
@@ -135,7 +135,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		log.Fatal("Application deployment failed 😪")
 	}
 
-	fmt.Println("Application deployed successfully!")
+	fmt.Println("Application deployed successfully! ⚡️")
 }
 
 func promptDeploymentOptions() (string, string, ProjectEnvs, error) {
@@ -225,8 +225,14 @@ func promptForEnvVariables() (ProjectEnvs, error) {
 func createEnvRecords(accountID string, project *models.Projects, Envs ProjectEnvs) ([]models.Envs, error) {
 	envsPayload := make([]models.Envs, 0, len(Envs))
 	accountUUID, _ := uuid.Parse(accountID)
+	uniqueKeys := make(map[string]bool)
 
 	for key, value := range Envs {
+		if _, ok := uniqueKeys[key]; ok {
+			// Duplicated key, skip
+			continue
+		}
+
 		encryptedValue, err := hashers.EncryptIt(value, os.Getenv("APP_KEY"))
 		if err != nil {
 			return nil, fmt.Errorf("failed to encrypt environment variable value: %v", err)
@@ -241,6 +247,8 @@ func createEnvRecords(accountID string, project *models.Projects, Envs ProjectEn
 			ProjectId: project.Id,
 		}
 		envsPayload = append(envsPayload, envRecord)
+
+		uniqueKeys[key] = true
 	}
 	return envsPayload, nil
 }

@@ -2,7 +2,6 @@ package projects
 
 import (
 	"errors"
-	"fmt"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/respository"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/random"
@@ -56,16 +55,31 @@ func UpdateProjectAndCreateEnvs(upace UpdateProjectAndCreateEnvsPayload) error {
 		Project:   upace.UpdateProjectPayload,
 		Trx:       dbTransaction,
 	}); err != nil {
-		fmt.Println(err)
 		return errors.New("An error occurred updating project")
 	}
 
 	if len(upace.Envs) != 0 {
-		_ = envRepository.DeleteEnvs(upace.ProjectId, upace.AccountId)
+		_ = envRepository.DeleteEnvs(upace.ProjectId, upace.AccountId, dbTransaction)
 
 		if err := envRepository.CreateMultipleProjectEnvs(upace.Envs, dbTransaction); err != nil {
 			return errors.New("An error occurred setting project envs")
 		}
+	}
+
+	return nil
+}
+
+func DeleteProjectAndRelatedResources(projectId, accountId uuid.UUID) error {
+	dbTransaction := respository.DBTransaction()
+	projectRepository := respository.ProjectsRepository{}
+	envRepository := respository.EnvsRepository{}
+
+	if err := envRepository.DeleteEnvs(projectId, accountId, dbTransaction); err != nil {
+		return err
+	}
+
+	if err := projectRepository.DeleteProject(projectId, accountId, dbTransaction); err != nil {
+		return err
 	}
 
 	return nil
@@ -97,7 +111,7 @@ func GetProjectEnvs(projectId, accountId uuid.UUID) ([]models.Envs, error) {
 
 func DeleteProjectEnvs(projectId, accountId uuid.UUID) error {
 	envRepository := respository.EnvsRepository{}
-	return envRepository.DeleteEnvs(projectId, accountId)
+	return envRepository.DeleteEnvs(projectId, accountId, nil)
 }
 
 func CreateBatchProjectEnvs(envs []models.Envs) error {

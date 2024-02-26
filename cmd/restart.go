@@ -13,7 +13,7 @@ var restartCmd = &cobra.Command{
 		IsAuthenticated(ctx, "", cmd)
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("Restart command called")
+		fmt.Println("Not Implemented")
 	},
 }
 

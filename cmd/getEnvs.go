@@ -19,13 +19,14 @@ var getEnvsCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		checkGitHubConnection(cmd)
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
 
 		if err := getProjectEnvs(accountId); err != nil {
-			fmt.Println(err)
-			return
+			return fmt.Errorf("error occurred fetching project envs: %w", err)
 		}
+
+		return nil
 	},
 }
 

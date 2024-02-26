@@ -15,12 +15,13 @@ var getAllProjectsCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		checkGitHubConnection(cmd)
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
 		if err := getAccountProjects(accountId); err != nil {
-			fmt.Println(err)
-			return
+			return fmt.Errorf("error occurred fetching all projects: %w", err)
 		}
+
+		return nil
 	},
 }
 

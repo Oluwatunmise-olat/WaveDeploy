@@ -16,21 +16,21 @@ var updateEnvsCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		checkGitHubConnection(cmd)
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
 
 		envs, err := updateProjectEnvs(accountId)
 		if err != nil {
-			fmt.Println(err)
-			return
+			return fmt.Errorf("error occurred updating project envs: %w", err)
 		}
 
 		if err := reDeployProject(DeploymentOptions{
 			Envs: envs,
 		}); err != nil {
-			fmt.Println(err)
-			return
+			return fmt.Errorf("error occurred redeploying project after envs update: %w", err)
 		}
+
+		return nil
 	},
 }
 

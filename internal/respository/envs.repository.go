@@ -49,7 +49,12 @@ func (er *EnvsRepository) GetEnvs(projectId, accountId uuid.UUID) ([]models.Envs
 	return envs, err
 }
 
-func (er *EnvsRepository) DeleteEnvs(projectId, accountId uuid.UUID) error {
-	err := er.initializeEnvsRepository().DB.Delete("account_id = ? and project_id = ?", accountId, projectId).Error
+func (er *EnvsRepository) DeleteEnvs(projectId, accountId uuid.UUID, trx *gorm.DB) error {
+	dbExecutor := er.initializeEnvsRepository().DB
+	if trx != nil {
+		dbExecutor = trx
+	}
+
+	err := dbExecutor.Delete("account_id = ? and project_id = ?", accountId, projectId).Error
 	return err
 }

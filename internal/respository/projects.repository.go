@@ -3,6 +3,8 @@ package respository
 import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/db"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"strings"
 	"sync"
 )
@@ -50,6 +52,16 @@ func (pr *ProjectsRepository) UpdateProject(up UpdateProjectPayload) error {
 		Where("account_id = ? and id = ?", up.AccountId, up.ProjectId).
 		Updates(up.Project).Error
 
+	return err
+}
+
+func (pr *ProjectsRepository) DeleteProject(projectId, accountId uuid.UUID, trx *gorm.DB) error {
+	dbExecutor := pr.initializeProjectsRepository().DB
+	if trx != nil {
+		dbExecutor = trx
+	}
+
+	err := dbExecutor.Delete("account_id = ? and project_id = ?", accountId, projectId).Error
 	return err
 }
 

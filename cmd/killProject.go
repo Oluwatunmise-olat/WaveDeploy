@@ -18,14 +18,14 @@ var killProjectCmd = &cobra.Command{
 	PreRun: func(cmd *cobra.Command, args []string) {
 		checkGitHubConnection(cmd)
 	},
-	Run: func(cmd *cobra.Command, args []string) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
 		if err := killProject(accountId); err != nil {
-			fmt.Println(err)
-			return
+			return fmt.Errorf("error occurred halting project: %w", err)
 		}
 
 		fmt.Println("Project Killed 🫸🏾🫷🏾")
+		return nil
 	},
 }
 

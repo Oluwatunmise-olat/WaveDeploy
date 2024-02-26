@@ -2,6 +2,7 @@ package flags
 
 import (
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 var projectName string
@@ -12,5 +13,5 @@ func InitializeProjectNameFlag(cmd *cobra.Command) {
 }
 
 func GetProjectName() string {
-	return projectName
+	return strings.TrimSpace(projectName)
 }
