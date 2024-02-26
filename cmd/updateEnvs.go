@@ -3,13 +3,12 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"strings"
 )
-
-var envUpdateProjectName string
 
 var updateEnvsCmd = &cobra.Command{
 	Use:   "update-envs",
@@ -37,12 +36,11 @@ var updateEnvsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(updateEnvsCmd)
-	updateEnvsCmd.Flags().StringVarP(&envUpdateProjectName, "name", "n", "", "Project name")
-	updateEnvsCmd.MarkFlagRequired("name")
+	flags.InitializeProjectNameFlag(updateEnvsCmd)
 }
 
 func updateProjectEnvs(accountId string) (ProjectEnvs, error) {
-	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(envUpdateProjectName))
+	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(flags.GetProjectName()))
 
 	if err != nil {
 		return nil, fmt.Errorf("project not found")
@@ -77,6 +75,7 @@ func updateProjectEnvs(accountId string) (ProjectEnvs, error) {
 
 func reDeployProject(opts DeploymentOptions) error {
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
+	projectName := flags.GetProjectName()
 
 	opts.PublicIPV4Addr = ipv4Addr
 	opts.VmUser = vmUser
@@ -88,7 +87,7 @@ func reDeployProject(opts DeploymentOptions) error {
 	}
 	defer client.Close()
 
-	redeployCommand := fmt.Sprintf("sudo docker service update --name %s", envUpdateProjectName)
+	redeployCommand := fmt.Sprintf("sudo docker service update --name %s", projectName)
 	for key, value := range opts.Envs {
 		redeployCommand += fmt.Sprintf(" --env-add %s=%s", key, value)
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"golang.org/x/crypto/ssh"
 	"io/fs"
 	"log"
@@ -34,8 +35,6 @@ import (
 
 type ProjectEnvs map[string]string
 
-var projectName string
-
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "Deploy a project",
@@ -55,8 +54,7 @@ var deployCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
-	deployCmd.Flags().StringVarP(&projectName, "name", "n", "", "Project name")
-	deployCmd.MarkFlagRequired("name")
+	flags.InitializeProjectNameFlag(deployCmd)
 }
 
 func checkGitHubConnection(cmd *cobra.Command) {
@@ -68,6 +66,8 @@ func getAccountID(cmd *cobra.Command) string {
 }
 
 func preDeploymentChecks(accountID string) (*models.Projects, error) {
+	projectName := flags.GetProjectName()
+
 	project, err := projects.GetProjectByName(accountID, strings.TrimSpace(projectName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch project: %v", err)
@@ -316,6 +316,8 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 }
 
 func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string) error {
+	projectName := flags.GetProjectName()
+
 	client, err := establishSSHConnection(opts)
 	if err != nil {
 		return err

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/hashers"
 	"github.com/google/uuid"
@@ -11,8 +12,6 @@ import (
 
 	"github.com/spf13/cobra"
 )
-
-var envProjectName string
 
 var getEnvsCmd = &cobra.Command{
 	Use:   "get-envs",
@@ -32,12 +31,11 @@ var getEnvsCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(getEnvsCmd)
-	getEnvsCmd.Flags().StringVarP(&envProjectName, "name", "n", "", "Project name")
-	getEnvsCmd.MarkFlagRequired("name")
+	flags.InitializeProjectNameFlag(getEnvsCmd)
 }
 
 func getProjectEnvs(accountId string) error {
-	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(envProjectName))
+	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(flags.GetProjectName()))
 
 	if err != nil {
 		return fmt.Errorf("project not found")
