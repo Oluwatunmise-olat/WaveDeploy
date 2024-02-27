@@ -48,7 +48,6 @@ func CreateGithubAppIfNotExists(payload structs.GithubOauthWebhook) {
 	newGithubApp := models.GithubApps{
 		InstallationId: payload.InstallationId,
 		AccountId:      hashers.DecodeIt(payload.State),
-		Code:           payload.Code,
 		CreatedAt:      time.Now(),
 		UpdatedAt:      time.Now(),
 		Id:             random.GetUUID(),

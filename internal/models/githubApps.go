@@ -10,7 +10,6 @@ type GithubApps struct {
 	Id             uuid.UUID `gorm:"primaryKey"`
 	AccountId      string    `gorm:"column:account_id"`
 	InstallationId string    `gorm:"column:installation_id"`
-	Code           string    `gorm:"column:code"`
 	CreatedAt      time.Time `gorm:"column:created_at"`
 	UpdatedAt      time.Time `gorm:"column:updated_at"`
 	gorm.DeletedAt `gorm:"column:deleted_at"`

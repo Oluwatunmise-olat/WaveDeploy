@@ -14,3 +14,5 @@ func main() {
 // Auto-Scale Based on metrics from prometheus command - Improvement 20
 // get projects pagination
 // gitbook docs
+
+// -> extensive tests
