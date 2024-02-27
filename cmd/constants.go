@@ -97,3 +97,12 @@ func IsAuthenticated(ctx context.Context, msg string, cobraCmd *cobra.Command) {
 	cobraCmd.SetContext(ctx)
 	s.Stop()
 }
+
+func getAccountID(cmd *cobra.Command) string {
+	return cmd.Context().Value("accountId").(string)
+}
+
+func getProjectName(cmd *cobra.Command) string {
+	val, _ := cmd.Flags().GetString("name")
+	return val
+}

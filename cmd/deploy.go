@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"golang.org/x/crypto/ssh"
 	"io/fs"
 	"log"
@@ -42,32 +41,31 @@ var deployCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
-		project, err := preDeploymentChecks(accountId)
+		projectName := getProjectName(cmd)
+
+		project, err := preDeploymentChecks(accountId, projectName)
 		if err != nil {
 			return fmt.Errorf("error occurred deploying project: %w", err)
 		}
 		deployProject(cmd, project)
 		return nil
 	},
+	SilenceUsage: true,
+	Example:      "wave-deploy deploy -n <PROJECT NAME>",
 }
 
 func init() {
 	rootCmd.AddCommand(deployCmd)
-	flags.InitializeProjectNameFlag(deployCmd)
+
+	deployCmd.Flags().StringP("name", "n", "", "Project Name")
 }
 
 func checkGitHubConnection(cmd *cobra.Command) {
 	IsAuthenticated(cmd.Context(), "Checking GitHub connection", cmd)
 }
 
-func getAccountID(cmd *cobra.Command) string {
-	return cmd.Context().Value("accountId").(string)
-}
-
-func preDeploymentChecks(accountID string) (*models.Projects, error) {
-	projectName := flags.GetProjectName()
-
-	project, err := projects.GetProjectByName(accountID, strings.TrimSpace(projectName))
+func preDeploymentChecks(accountId, projectName string) (*models.Projects, error) {
+	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(projectName))
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch project: %v", err)
 	}
@@ -126,7 +124,7 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		log.Fatal("Failed to build application Dockerfile: ", err)
 	}
 
-	if err = deployAndStartApplication(deploymentOptions, remoteAppDir); err != nil {
+	if err = deployAndStartApplication(deploymentOptions, remoteAppDir, project.Name); err != nil {
 		log.Fatal("Failed to deploy and start application:", err)
 	}
 	accountUUId, _ := uuid.Parse(accountId)
@@ -349,9 +347,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	return appRemoteDirectory, err
 }
 
-func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory string) error {
-	projectName := flags.GetProjectName()
-
+func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory, projectName string) error {
 	client, err := establishSSHConnection(opts)
 	if err != nil {
 		return err

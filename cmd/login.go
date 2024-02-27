@@ -12,6 +12,7 @@ var loginCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		initializeAuthentication()
 	},
+	Example: "wave-deploy login",
 }
 
 func init() {

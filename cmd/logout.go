@@ -14,6 +14,7 @@ var logoutCmd = &cobra.Command{
 		account.LogoutAccount()
 		s.Stop()
 	},
+	Example: "wave-deploy logout",
 }
 
 func init() {

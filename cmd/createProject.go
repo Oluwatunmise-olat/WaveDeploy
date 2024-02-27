@@ -18,6 +18,7 @@ var createProjectCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		createProject(cmd)
 	},
+	Example: "wave-deploy create-project",
 }
 
 func init() {

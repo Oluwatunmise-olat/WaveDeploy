@@ -11,7 +11,6 @@ import (
 func BootstrapApp() {
 	serveHTTP := flag.Bool("serve-http", false, "start HTTP server")
 	flag.Parse()
-
 	godotenv.Load()
 
 	_, err := db.Connect()

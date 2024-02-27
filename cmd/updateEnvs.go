@@ -3,11 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var updateEnvsCmd = &cobra.Command{
@@ -18,29 +16,33 @@ var updateEnvsCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
+		projectName := getProjectName(cmd)
 
-		envs, err := updateProjectEnvs(accountId)
+		envs, err := updateProjectEnvs(accountId, projectName)
 		if err != nil {
 			return fmt.Errorf("error occurred updating project envs: %w", err)
 		}
 
 		if err := reDeployProject(DeploymentOptions{
 			Envs: envs,
-		}); err != nil {
+		}, projectName); err != nil {
 			return fmt.Errorf("error occurred redeploying project after envs update: %w", err)
 		}
 
 		return nil
 	},
+	SilenceUsage: true,
+	Example:      "wave-deploy update-envs -n <PROJECT NAME>",
 }
 
 func init() {
 	rootCmd.AddCommand(updateEnvsCmd)
-	flags.InitializeProjectNameFlag(updateEnvsCmd)
+	updateEnvsCmd.Flags().StringP("name", "n", "", "Project Name")
+	updateEnvsCmd.MarkFlagRequired("name")
 }
 
-func updateProjectEnvs(accountId string) (ProjectEnvs, error) {
-	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(flags.GetProjectName()))
+func updateProjectEnvs(accountId, projectName string) (ProjectEnvs, error) {
+	project, err := projects.GetProjectByName(accountId, projectName)
 
 	if err != nil {
 		return nil, fmt.Errorf("project not found")
@@ -49,6 +51,7 @@ func updateProjectEnvs(accountId string) (ProjectEnvs, error) {
 	accountUUID, _ := uuid.Parse(project.AccountId)
 	if !project.IsLive {
 		return nil, errors.New("can only update deployed project envs")
+		//return nil, nil
 	}
 
 	err = projects.DeleteProjectEnvs(project.Id, accountUUID)
@@ -73,9 +76,8 @@ func updateProjectEnvs(accountId string) (ProjectEnvs, error) {
 	return envs, nil
 }
 
-func reDeployProject(opts DeploymentOptions) error {
+func reDeployProject(opts DeploymentOptions, projectName string) error {
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
-	projectName := flags.GetProjectName()
 
 	opts.PublicIPV4Addr = ipv4Addr
 	opts.VmUser = vmUser

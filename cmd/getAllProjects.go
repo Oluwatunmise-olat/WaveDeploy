@@ -23,6 +23,8 @@ var getAllProjectsCmd = &cobra.Command{
 
 		return nil
 	},
+	SilenceUsage: true,
+	Example:      "wave-deploy get-projects",
 }
 
 func init() {

@@ -3,12 +3,9 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/cmd/flags"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/google/uuid"
-	"strings"
-
 	"github.com/spf13/cobra"
 )
 
@@ -20,22 +17,28 @@ var killProjectCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		accountId := getAccountID(cmd)
-		if err := killProject(accountId); err != nil {
+		projectName := getProjectName(cmd)
+
+		if err := killProject(accountId, projectName); err != nil {
 			return fmt.Errorf("error occurred halting project: %w", err)
 		}
 
 		fmt.Println("Project Killed 🫸🏾🫷🏾")
 		return nil
 	},
+	SilenceUsage: true,
+	Example:      "wave-deploy kill-project -n <PROJECT NAME>",
 }
 
 func init() {
 	rootCmd.AddCommand(killProjectCmd)
-	flags.InitializeProjectNameFlag(updateEnvsCmd)
+
+	killProjectCmd.Flags().StringP("name", "n", "", "Project Name")
+	killProjectCmd.MarkFlagRequired("name")
 }
 
-func killProject(accountId string) error {
-	project, err := projects.GetProjectByName(accountId, strings.TrimSpace(flags.GetProjectName()))
+func killProject(accountId, projectName string) error {
+	project, err := projects.GetProjectByName(accountId, projectName)
 	accountUUID, _ := uuid.Parse(accountId)
 
 	if err != nil {
