@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
+	"github.com/briandowns/spinner"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -18,17 +19,21 @@ var updateEnvsCmd = &cobra.Command{
 		accountId := getAccountID(cmd)
 		projectName := getProjectName(cmd)
 
+		s := initializeSpinner("Updating Application Envs ", "\n")
 		envs, err := updateProjectEnvs(accountId, projectName)
 		if err != nil {
+			s.Stop()
 			return fmt.Errorf("error occurred updating project envs: %w", err)
 		}
 
 		if err := reDeployProject(DeploymentOptions{
 			Envs: envs,
-		}, projectName); err != nil {
+		}, projectName, s); err != nil {
+			s.Stop()
 			return fmt.Errorf("error occurred redeploying project after envs update: %w", err)
 		}
-
+		s.FinalMSG = "Application Envs Updated 🪐\n"
+		s.Stop()
 		return nil
 	},
 	SilenceUsage: true,
@@ -76,31 +81,26 @@ func updateProjectEnvs(accountId, projectName string) (ProjectEnvs, error) {
 	return envs, nil
 }
 
-func reDeployProject(opts DeploymentOptions, projectName string) error {
+func reDeployProject(opts DeploymentOptions, projectName string, s *spinner.Spinner) error {
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
 
 	opts.PublicIPV4Addr = ipv4Addr
 	opts.VmUser = vmUser
 	opts.PrivateKeyPath = privateKeyPath
 
+	s.Start()
 	client, err := establishSSHConnection(opts)
 	if err != nil {
 		return err
 	}
 	defer client.Close()
 
-	redeployCommand := fmt.Sprintf("sudo docker service update --name %s", projectName)
+	// Update One replica at a time
+	redeployCommand := fmt.Sprintf("sudo docker service update %s --force --update-parallelism 1 --update-delay %s", projectName, "5s")
 	for key, value := range opts.Envs {
 		redeployCommand += fmt.Sprintf(" --env-add %s=%s", key, value)
 	}
 	_, err = client.Run(redeployCommand)
-	if err != nil {
-		return err
-	}
-
-	// Update One replica at a time
-	rollingUpdatesCommand := fmt.Sprintf("sudo docker service --force --update-parallelism 1 --update-delay %s %s", "5s", projectName)
-	_, err = client.Run(rollingUpdatesCommand)
 	if err != nil {
 		return err
 	}

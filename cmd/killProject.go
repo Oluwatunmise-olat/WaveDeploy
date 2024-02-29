@@ -3,10 +3,14 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
+	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/files"
+	"github.com/briandowns/spinner"
 	"github.com/google/uuid"
+	"github.com/melbahja/goph"
 	"github.com/spf13/cobra"
+	"os"
+	"path"
 )
 
 var killProjectCmd = &cobra.Command{
@@ -19,10 +23,12 @@ var killProjectCmd = &cobra.Command{
 		accountId := getAccountID(cmd)
 		projectName := getProjectName(cmd)
 
-		if err := killProject(accountId, projectName); err != nil {
+		s := initializeSpinner("killing Project ", "")
+		if err := killProject(accountId, projectName, s); err != nil {
+			s.Stop()
 			return fmt.Errorf("error occurred halting project: %w", err)
 		}
-
+		s.Stop()
 		fmt.Println("Project Killed 🫸🏾🫷🏾")
 		return nil
 	},
@@ -37,7 +43,7 @@ func init() {
 	killProjectCmd.MarkFlagRequired("name")
 }
 
-func killProject(accountId, projectName string) error {
+func killProject(accountId, projectName string, s *spinner.Spinner) error {
 	project, err := projects.GetProjectByName(accountId, projectName)
 	accountUUID, _ := uuid.Parse(accountId)
 
@@ -50,6 +56,11 @@ func killProject(accountId, projectName string) error {
 	}
 
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
+
+	if s != nil {
+		s.Start()
+	}
+
 	client, err := establishSSHConnection(DeploymentOptions{
 		VmUser:         vmUser,
 		PublicIPV4Addr: ipv4Addr,
@@ -67,12 +78,46 @@ func killProject(accountId, projectName string) error {
 	deleteStaleContainersCommand := fmt.Sprintf("sudo docker rm $(sudo docker ps -a --filter ancestor=%s -q)", "projectName")
 	_, _ = client.Run(deleteStaleContainersCommand)
 
-	deleteImageCommand := fmt.Sprintf("sudo docker rmi %s:latest", "")
+	deleteImageCommand := fmt.Sprintf("sudo docker rmi %s:latest", project.Name)
 	_, _ = client.Run(deleteImageCommand)
 
-	projects.UpdateProject(models.Projects{
-		IsLive: false,
-	}, project.Id, accountUUID)
+	// Cleanup app directory
+	_, _ = client.Run(fmt.Sprintf("sudo rm -rf /home/%s/app", vmUser))
+
+	updateData := map[string]interface{}{
+		"is_live": false,
+	}
+
+	_ = projects.UpdateProject(updateData, project.Id, accountUUID)
+
+	// revert default caddy config
+	if err = revertToDefaultCaddyConfig(client); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func revertToDefaultCaddyConfig(client *goph.Client) error {
+	rootPath := files.GetCurrentPathRootDirectory()
+	configPath := path.Join(rootPath, "/webserver/Caddyfile")
+
+	configContent, err := os.ReadFile(configPath)
+	if err != nil {
+		return errors.New("Error occurred reading default caddy config file")
+	}
+
+	command := fmt.Sprintf("echo \"%s\" | sudo tee /etc/caddy/Caddyfile", configContent)
+
+	_, err = client.Run(command)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.Run("sudo systemctl reload caddy")
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

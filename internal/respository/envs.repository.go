@@ -29,7 +29,7 @@ func (er *EnvsRepository) CreateProjectEnvs(env models.Envs, trx *gorm.DB) error
 		dbExecutor = trx
 	}
 
-	err := dbExecutor.Create(env).Error
+	err := dbExecutor.Model(&models.Envs{}).Create(env).Error
 	return err
 }
 
@@ -39,13 +39,19 @@ func (er *EnvsRepository) CreateMultipleProjectEnvs(envs []models.Envs, trx *gor
 		dbExecutor = trx
 	}
 
-	err := dbExecutor.Create(envs).Error
+	err := dbExecutor.Model(&models.Envs{}).Create(envs).Error
 	return err
 }
 
 func (er *EnvsRepository) GetEnvs(projectId, accountId uuid.UUID) ([]models.Envs, error) {
 	var envs []models.Envs
-	err := er.initializeEnvsRepository().DB.Where("account_id = ? and project_id = ? and deleted_at IS NULL", accountId, projectId).Find(&envs).Error
+
+	err := er.initializeEnvsRepository().
+		DB.Model(&models.Envs{}).
+		Where("account_id = ? and project_id = ? and deleted_at is null", accountId, projectId).
+		Find(&envs).
+		Error
+
 	return envs, err
 }
 
@@ -55,6 +61,13 @@ func (er *EnvsRepository) DeleteEnvs(projectId, accountId uuid.UUID, trx *gorm.D
 		dbExecutor = trx
 	}
 
-	err := dbExecutor.Delete("account_id = ? and project_id = ?", accountId, projectId).Error
+	var envs models.Envs
+	err := dbExecutor.
+		Model(&models.Envs{}).
+		Where("account_id = ? and project_id = ?", accountId, projectId).
+		Unscoped().
+		Delete(&envs).
+		Error
+
 	return err
 }

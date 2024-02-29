@@ -12,7 +12,7 @@ func main() {
 // Logs streaming - Improvement 19
 // PR Links - Improvement 19 (if toggled on, save credentials)
 // Auto-Scale Based on metrics from prometheus command - Improvement 20
-// get projects pagination
 // gitbook docs
+// prompt for spa and api
 
-// -> extensive tests
+// -> extensive tests (gh disconnection)

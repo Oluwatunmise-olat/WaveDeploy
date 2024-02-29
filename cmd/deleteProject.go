@@ -17,10 +17,13 @@ var deleteProjectCmd = &cobra.Command{
 		accountId := getAccountID(cmd)
 		projectName := getProjectName(cmd)
 
+		s := initializeSpinner("Deleting Project ", "\n")
+		s.Start()
 		if err := deleteProject(accountId, projectName); err != nil {
+			s.Stop()
 			return fmt.Errorf("error occurred deleting project: %w", err)
 		}
-
+		s.Stop()
 		fmt.Println("Project deleted successfully 🏮")
 		return nil
 	},
@@ -44,7 +47,7 @@ func deleteProject(accountId, projectName string) error {
 	accountUUID, _ := uuid.Parse(accountId)
 
 	if project.IsLive {
-		if err = killProject(accountId, project.Name); err != nil {
+		if err = killProject(accountId, project.Name, nil); err != nil {
 			return err
 		}
 	}

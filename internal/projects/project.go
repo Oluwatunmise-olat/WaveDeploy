@@ -14,7 +14,7 @@ type UpdateProjectAndCreateEnvsPayload struct {
 	Envs                 []models.Envs
 	AccountId            uuid.UUID
 	ProjectId            uuid.UUID
-	UpdateProjectPayload models.Projects
+	UpdateProjectPayload map[string]interface{}
 }
 
 func IsProjectNameTaken(accountId string, projectName string) (bool, error) {
@@ -90,8 +90,9 @@ func GetProjectByName(accountId, projectName string) (*models.Projects, error) {
 	return projectRepository.GetProjectByNameAndAccount(projectName, accountId)
 }
 
-func UpdateProject(updateProjectPayload models.Projects, projectId, accountId uuid.UUID) error {
+func UpdateProject(updateProjectPayload map[string]interface{}, projectId, accountId uuid.UUID) error {
 	projectRepository := respository.ProjectsRepository{}
+
 	return projectRepository.UpdateProject(respository.UpdateProjectPayload{
 		ProjectId: projectId,
 		AccountId: accountId,

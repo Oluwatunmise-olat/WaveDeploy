@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/google/uuid"
 )
 
@@ -27,7 +26,7 @@ type DeploymentOptions struct {
 type BuildApplicationOptions struct {
 	AccountId            string
 	ProjectId            uuid.UUID
-	ProjectUpdatePayload models.Projects
+	ProjectUpdatePayload map[string]interface{}
 	Envs                 ProjectEnvs
 	DeploymentOptions    DeploymentOptions
 }

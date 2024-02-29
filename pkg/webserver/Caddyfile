@@ -1,0 +1,6 @@
+:80 {
+	root * /usr/share/caddy
+
+	# Enable the static file server.
+	file_server
+}

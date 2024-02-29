@@ -41,6 +41,7 @@ func GetFileContent(path string) ([]byte, error) {
 }
 
 func GetCurrentPathRootDirectory() string {
-	_, b, _, _ := runtime.Caller(0)
-	return filepath.Dir(b)
+	_, currentFilePath, _, _ := runtime.Caller(0)
+
+	return filepath.Dir(filepath.Dir(currentFilePath))
 }

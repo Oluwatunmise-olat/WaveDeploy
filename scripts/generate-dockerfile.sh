@@ -35,18 +35,20 @@ cd $work_dir || exit 1
 
 # Clone repository if provided
 if [[ ! -z $repo_url ]]; then
+  #https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
+  rm -rf "$(basename "$repo_url" | sed 's/\.git$//')"
   echo "🚕 Pulling repository..."
   git clone "$repo_url"
 
   if [[ $? -eq 0 ]]; then
-    echo "✅ Repository Pulled Successfully"
+    echo "✅  Repository Pulled Successfully"
   else
     echo "❌ Failed To Pull Repository Code. Please confirm wave-deploy has access to the repository on GitHub"
     exit 1
   fi
 fi
 
-echo "👷🏽 Building application"
+echo "👷🏽Building application"
 
 env_args=()
 for env in "${envs[@]}"; do
@@ -63,12 +65,18 @@ if [[ ! -z $start_cmd ]]; then
 fi
 
 # Build the application
-nixpacks build "${app_path}" \
+output=$(nixpacks build "${app_path}" \
   --platform linux/amd64 \
   --name "$app_name" \
-   "${build_args[@]}" \
+  "${build_args[@]}" \
   "${env_args[@]}" \
-  --out "${output_path}" &> /dev/null
+  --out "${output_path}" 2>&1)
+
+
+if [[ ! $? -eq 0 ]]; then
+    echo "❌ Failed to build project. $output"
+    exit 1
+fi
 
 mv "${output_path}/.nixpacks/Dockerfile" "${output_path}/.nixpacks/Dockerfile.wavedeploy"
 mv "${output_path}/.nixpacks/Dockerfile.wavedeploy" "${app_path}/"
@@ -77,7 +85,7 @@ mv "${output_path}/.nixpacks" "${app_path}/"
 if [[ $? -eq 0 ]]; then
   echo "✅ Application Build Successful"
 else
-  echo "❌ Application Build Failed ❌"
+  echo "❌  Application Build Failed ❌"
   exit 1
 fi
 

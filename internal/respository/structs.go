@@ -1,7 +1,6 @@
 package respository
 
 import (
-	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
@@ -11,7 +10,7 @@ type ProjectsRepository struct {
 }
 
 type UpdateProjectPayload struct {
-	Project   models.Projects
+	Project   map[string]interface{}
 	ProjectId uuid.UUID
 	AccountId uuid.UUID
 	Trx       *gorm.DB

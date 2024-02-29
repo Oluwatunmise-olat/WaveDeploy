@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -58,6 +59,7 @@ func init() {
 	rootCmd.AddCommand(deployCmd)
 
 	deployCmd.Flags().StringP("name", "n", "", "Project Name")
+	deployCmd.MarkFlagRequired("name")
 }
 
 func checkGitHubConnection(cmd *cobra.Command) {
@@ -80,9 +82,10 @@ func preDeploymentChecks(accountId, projectName string) (*models.Projects, error
 
 func deployProject(cmd *cobra.Command, project *models.Projects) {
 	accountId := getAccountID(cmd)
-	updatedPayload := models.Projects{}
+	updatedPayload := make(map[string]interface{})
 
 	vmUser, ipv4Addr, privateKeyPath := promptDeploymentCredentialsDetails()
+
 	replicas := promptForReplicaCommand()
 	buildCommand, runCommand, Envs, err := promptDeploymentOptions()
 
@@ -90,9 +93,9 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		log.Fatal(err)
 	}
 
-	updatedPayload.BuildCommand = buildCommand
-	updatedPayload.RunCommand = runCommand
-	updatedPayload.Replicas = replicas
+	updatedPayload["build_command"] = buildCommand
+	updatedPayload["run_command"] = runCommand
+	updatedPayload["replicas"] = replicas
 
 	envsPayload, err := createEnvRecords(accountId, project, Envs)
 	if err != nil {
@@ -113,6 +116,8 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		Replicas:       replicas,
 	}
 
+	s := initializeSpinner("Building Application ", "Application Build Successful\n")
+	s.Start()
 	remoteAppDir, err := buildApplicationDockerfile(BuildApplicationOptions{
 		AccountId:            accountId,
 		ProjectId:            project.Id,
@@ -121,15 +126,24 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 		DeploymentOptions:    deploymentOptions,
 	})
 	if err != nil {
-		log.Fatal("Failed to build application Dockerfile: ", err)
+		s.FinalMSG = "Application Build Failed\n"
+		s.Stop()
+		fmt.Sprintf("Failed to build application: %v", err)
+		return
 	}
+	s.Stop()
 
+	s.Start()
+	s.Prefix = "Deploying Application "
 	if err = deployAndStartApplication(deploymentOptions, remoteAppDir, project.Name); err != nil {
+		s.FinalMSG = "Application Deployment Failed\n"
+		s.Stop()
 		log.Fatal("Failed to deploy and start application:", err)
 	}
 	accountUUId, _ := uuid.Parse(accountId)
+	s.Stop()
 
-	if err = projects.UpdateProject(models.Projects{IsLive: true}, project.Id, accountUUId); err != nil {
+	if err = projects.UpdateProject(map[string]interface{}{"is_live": true}, project.Id, accountUUId); err != nil {
 		log.Fatal("Application deployment failed 😪")
 	}
 
@@ -251,7 +265,7 @@ func createEnvRecords(accountID string, project *models.Projects, Envs ProjectEn
 	return envsPayload, nil
 }
 
-func updateProjectAndCreateEnvs(accountID string, project *models.Projects, updatedPayload models.Projects, envsPayload []models.Envs) error {
+func updateProjectAndCreateEnvs(accountID string, project *models.Projects, updatedPayload map[string]interface{}, envsPayload []models.Envs) error {
 	accountIdToUUId, _ := uuid.Parse(accountID)
 	payload := projects.UpdateProjectAndCreateEnvsPayload{
 		Envs:                 envsPayload,
@@ -269,7 +283,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	ghRepoName := strings.ReplaceAll(ghRepoUrl[len(ghRepoUrl)-1], ".git", "")
 
 	appRootDirectory := files.GetCurrentPathRootDirectory()
-	scriptPath := filepath.Join(appRootDirectory, "/../../scripts")
+	scriptPath := filepath.Join(appRootDirectory, "/../scripts")
 	dockerFileScriptPath := fmt.Sprintf("%s/generate-dockerfile.sh", opts.DeploymentOptions.RemoteAppDir)
 	vmSetupScriptPath := fmt.Sprintf("%s/setup-ubuntu-vm.sh", opts.DeploymentOptions.RemoteAppDir)
 	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", ghRepoName)
@@ -294,6 +308,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	err = makeRemoteFileExecutableMode(client, vmSetupScriptPath)
 	if err != nil {
 		return "", err
@@ -340,10 +355,13 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_, err = client.Run(dockerFileGenerationCommand)
+
+	out, err := client.Run(dockerFileGenerationCommand)
+	fmt.Println(string(out))
 	if err != nil {
 		return "", err
 	}
+
 	return appRemoteDirectory, err
 }
 
@@ -353,6 +371,12 @@ func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory, proje
 		return err
 	}
 	defer client.Close()
+
+	deleteStaleContainersCommand := fmt.Sprintf("sudo docker rm $(sudo docker ps -a --filter ancestor=%s -q)", projectName)
+	_, _ = client.Run(deleteStaleContainersCommand)
+
+	deleteImageCommand := fmt.Sprintf("sudo docker rmi %s:latest", projectName)
+	_, _ = client.Run(deleteImageCommand)
 
 	// Build Docker Image
 	_, err = client.Run(
@@ -376,11 +400,8 @@ func deployAndStartApplication(opts DeploymentOptions, remoteAppDirectory, proje
 		}
 	}
 
-	deleteStaleContainersCommand := fmt.Sprintf("sudo docker rm $(sudo docker ps -a --filter ancestor=%s -q)", projectName)
-	_, _ = client.Run(deleteStaleContainersCommand)
-
-	deleteImageCommand := fmt.Sprintf("sudo docker rmi %s:latest", projectName)
-	_, _ = client.Run(deleteImageCommand)
+	// Stop any running service
+	client.Run(fmt.Sprintf("sudo docker service rm %s", projectName))
 
 	// Deploy Command
 	createCmd := fmt.Sprintf("sudo docker service create --name %s --replicas %d --publish 8080:8080 --env PORT=8080", projectName, opts.Replicas)
@@ -440,7 +461,9 @@ func uploadFileToRemoteRecursively(client *goph.Client, localFolder, remoteFolde
 			}
 
 			remoteFilePath := filepath.Join(remoteFolder, relPath)
+			client.Run(fmt.Sprintf("sudo rm -rf %s", remoteFilePath))
 			err = client.Upload(path, remoteFilePath)
+
 			if err != nil {
 				return err
 			}
@@ -459,12 +482,15 @@ func getDynamicPort(publicIp string) {
 }
 
 func setupAndReloadApiWebServer(client *goph.Client, port int) error {
+	rootPath := files.GetCurrentPathRootDirectory()
+	templatePath := path.Join(rootPath, "/webserver/tpl/web-server.caddy.tmpl")
+
 	payload := WebServerTmpl{
 		EXTERNAL_PORT:           80,
 		INTERNAL_LISTENING_PORT: port,
 	}
 
-	tmpl, err := template.ParseFiles("template.tmpl")
+	tmpl, err := template.ParseFiles(templatePath)
 	if err != nil {
 		return err
 	}
