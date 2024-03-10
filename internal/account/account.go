@@ -3,6 +3,7 @@ package account
 import (
 	"errors"
 	"fmt"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/respository"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/files"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/hashers"
@@ -96,4 +97,20 @@ func GetAccountInstallationId(accountId string) (string, error) {
 
 	return installationId, nil
 
+}
+
+func GetAccountByEmail(email string) models.Accounts {
+	accountRepository := respository.AccountsRepository{}
+	account, err := accountRepository.GetAccountByEmail(email)
+
+	if err != nil {
+		return models.Accounts{}
+	}
+
+	return *account
+}
+
+func CreateAccount(payload models.Accounts) error {
+	accountRepository := respository.AccountsRepository{}
+	return accountRepository.CreateAccount(payload)
 }

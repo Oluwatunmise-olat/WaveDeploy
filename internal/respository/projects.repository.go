@@ -93,7 +93,8 @@ func (pr *ProjectsRepository) GetAllProjectsByAccountId(accountId string) ([]mod
 	err := pr.initializeProjectsRepository().
 		DB.Model(&models.Projects{}).
 		Select("name", "github_repo_url", "is_live", "id").
-		Find(&projects).Where("account_id = ?", accountId).
+		Where("account_id = ?", accountId).
+		Find(&projects).
 		Error
 
 	return projects, err
