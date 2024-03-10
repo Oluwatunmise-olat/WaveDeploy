@@ -2,6 +2,7 @@ CREATE TABLE IF NOT EXISTS projects (
     id VARCHAR(36) PRIMARY KEY,
     account_id VARCHAR(36) NOT NULL,
     `name` VARCHAR(500) NOT NULL,
+    type VARCHAR(250) NOT NULL DEFAULT 'API',
     github_repo_url VARCHAR(5000) NULL,
     github_branch VARCHAR(5000) NULL,
     github_commit VARCHAR(5000) NULL,

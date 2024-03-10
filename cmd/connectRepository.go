@@ -28,7 +28,7 @@ func connectGithubRepositoryToAppInstallation(cmd *cobra.Command) {
 	accountConnected := github.IsAccountConnectedAlreadyToGithub(accountId.(string))
 
 	if !accountConnected {
-		s.FinalMSG = "Account not connected to github. Please connect with `wave-deploy connect-github`"
+		s.FinalMSG = "Account not connected to github.\nPlease connect with `wave-deploy connect-github`"
 		s.Stop()
 		return
 	}

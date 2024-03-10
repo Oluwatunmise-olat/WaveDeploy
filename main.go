@@ -8,11 +8,4 @@ func main() {
 	internal.BootstrapApp()
 }
 
-// TODO's
-// Logs streaming - Improvement 19
-// PR Links - Improvement 19 (if toggled on, save credentials)
-// Auto-Scale Based on metrics from prometheus command - Improvement 20
-// gitbook docs
-// prompt for spa and api
-
-// -> extensive tests (gh disconnection)
+// -> gitbook docs (https://app.gitbook.com/o/scVXoXI8U18V1AcOZVwS/s/Cx5qRqsd8RgyD1ysHMmM/usuage/get-all-projects)

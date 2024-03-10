@@ -34,6 +34,6 @@ func connectToGithub(cmd *cobra.Command) {
 	}
 
 	connectToGithubLink := github.GetConnectToGithubUrl(accountId)
-	s.FinalMSG = fmt.Sprintf("Click on this link to authenticate with GitHub: %s\n", connectToGithubLink)
+	s.FinalMSG = fmt.Sprintf("Click on this link to authenticate with GitHub: \n%s\n", connectToGithubLink)
 	s.Stop()
 }

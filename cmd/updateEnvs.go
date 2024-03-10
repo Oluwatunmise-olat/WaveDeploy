@@ -56,7 +56,6 @@ func updateProjectEnvs(accountId, projectName string) (ProjectEnvs, error) {
 	accountUUID, _ := uuid.Parse(project.AccountId)
 	if !project.IsLive {
 		return nil, errors.New("can only update deployed project envs")
-		//return nil, nil
 	}
 
 	err = projects.DeleteProjectEnvs(project.Id, accountUUID)

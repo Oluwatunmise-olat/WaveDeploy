@@ -6,10 +6,18 @@ import (
 	"time"
 )
 
+type ProjectType string
+
+const (
+	API ProjectType = "API"
+	SPA ProjectType = "SPA"
+)
+
 type Projects struct {
 	Id             uuid.UUID `gorm:"primaryKey"`
 	AccountId      string    `gorm:"column:account_id"`
 	Name           string    `gorm:"column:name"`
+	Type           string    `gorm:"column:type"`
 	GithubRepoUrl  string    `gorm:"column:github_repo_url"`
 	GithubBranch   string    `gorm:"column:github_branch"`
 	GithubCommit   string    `gorm:"column:github_commit"`

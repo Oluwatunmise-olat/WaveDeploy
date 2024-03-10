@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/github"
+	"github.com/Oluwatunmise-olat/WaveDeploy/internal/models"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/structs"
 	"github.com/spf13/cobra"
@@ -36,11 +37,16 @@ func createProject(cmd *cobra.Command) {
 		return
 	}
 
-	selectedRepository := PromptForGithubRepository(accountId)
+	projectType := PromptForProjectType()
 
-	err := projects.CreateProject(accountId, _projectName, &selectedRepository)
+	selectedRepository := PromptForGithubRepository(accountId)
+	if selectedRepository.GitUrl == "" {
+		return
+	}
+
+	err := projects.CreateProject(accountId, _projectName, projectType, &selectedRepository)
 	if err != nil {
-		fmt.Println("Error creating project:", err)
+		fmt.Println("Error creating project: Please connect account to github with `wave-deploy connect-github`")
 		return
 	}
 
@@ -53,14 +59,20 @@ func PromptForProjectName() string {
 	return GetPromptInput(projectNamePromptCmd, nil)
 }
 
+// PromptForProjectType prompts the user for the project type
+func PromptForProjectType() string {
+	selectRProjectTypePromptCmd := Prompt{label: "> Select project type ", items: []string{string(models.API), string(models.SPA)}}
+	return GetPromptSelector(selectRProjectTypePromptCmd, nil)
+}
+
 // PromptForGithubRepository Prompts user to select a GitHub repository
 func PromptForGithubRepository(accountId string) structs.GithubAInstallationRepositories {
 	var selectedRepository structs.GithubAInstallationRepositories
 
 	ghRepositories, err := github.GetAccountConnectedRepositories(accountId)
 	if err != nil {
-		fmt.Println("Error fetching GitHub repositories:", err)
-		return structs.GithubAInstallationRepositories{}
+		fmt.Println("Error fetching GitHub repositories: Please connect account to github with `wave-deploy connect-github`")
+		return structs.GithubAInstallationRepositories{GitUrl: ""}
 	}
 
 	var ghRepositoryNames []string

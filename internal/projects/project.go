@@ -22,7 +22,7 @@ func IsProjectNameTaken(accountId string, projectName string) (bool, error) {
 	return projectRepository.ProjectExistsWithName(projectName, accountId)
 }
 
-func CreateProject(accountId string, projectName string, ghRepo *structs.GithubAInstallationRepositories) error {
+func CreateProject(accountId string, projectName string, projectType string, ghRepo *structs.GithubAInstallationRepositories) error {
 	projectRepository := respository.ProjectsRepository{}
 
 	project := models.Projects{
@@ -32,6 +32,7 @@ func CreateProject(accountId string, projectName string, ghRepo *structs.GithubA
 		UpdatedAt:     time.Now(),
 		AccountId:     accountId,
 		Name:          projectName,
+		Type:          projectType,
 		GithubBranch:  ghRepo.DefaultBranch,
 		GithubRepoUrl: ghRepo.GitUrl,
 		GithubCommit:  "",

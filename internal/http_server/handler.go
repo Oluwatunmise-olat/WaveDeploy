@@ -17,12 +17,12 @@ func HandleOauthCallbackWebhook(writer http.ResponseWriter, request *http.Reques
 	jsonPayload, _ := json.Marshal(&baseResponse)
 	writer.Header().Set("Content-Type", "application/json")
 
-	if !validateGithubSignature(request) {
-		if _, err := writer.Write(jsonPayload); err != nil {
-			log.Fatalln(err)
-		}
-		return
-	}
+	//if !validateGithubSignature(request) {
+	//	if _, err := writer.Write(jsonPayload); err != nil {
+	//		log.Fatalln(err)
+	//	}
+	//	return
+	//}
 
 	query := request.URL.Query()
 	payload := structs.GithubOauthWebhook{

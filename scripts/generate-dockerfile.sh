@@ -38,7 +38,8 @@ if [[ ! -z $repo_url ]]; then
   #https://www.cyberciti.biz/faq/bash-get-basename-of-filename-or-directory-name/
   rm -rf "$(basename "$repo_url" | sed 's/\.git$//')"
   echo "🚕 Pulling repository..."
-  git clone "$repo_url"
+  rm -rf "${app_name}"
+  git clone "$repo_url" "${app_name}"
 
   if [[ $? -eq 0 ]]; then
     echo "✅  Repository Pulled Successfully"
@@ -79,7 +80,10 @@ if [[ ! $? -eq 0 ]]; then
 fi
 
 mv "${output_path}/.nixpacks/Dockerfile" "${output_path}/.nixpacks/Dockerfile.wavedeploy"
+# Move generated dockerfile to reposutory directory
 mv "${output_path}/.nixpacks/Dockerfile.wavedeploy" "${app_path}/"
+# Move generated dockerfile artifacts to repository directory
+rm -rf "${app_path}/.nixpacks" &> /dev/null
 mv "${output_path}/.nixpacks" "${app_path}/"
 
 if [[ $? -eq 0 ]]; then

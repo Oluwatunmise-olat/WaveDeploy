@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/Oluwatunmise-olat/WaveDeploy/internal/projects"
+	"github.com/briandowns/spinner"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -18,8 +19,7 @@ var deleteProjectCmd = &cobra.Command{
 		projectName := getProjectName(cmd)
 
 		s := initializeSpinner("Deleting Project ", "\n")
-		s.Start()
-		if err := deleteProject(accountId, projectName); err != nil {
+		if err := deleteProject(accountId, projectName, s); err != nil {
 			s.Stop()
 			return fmt.Errorf("error occurred deleting project: %w", err)
 		}
@@ -38,7 +38,7 @@ func init() {
 	deleteProjectCmd.MarkFlagRequired("name")
 }
 
-func deleteProject(accountId, projectName string) error {
+func deleteProject(accountId, projectName string, s *spinner.Spinner) error {
 	project, err := projects.GetProjectByName(accountId, projectName)
 	if err != nil {
 		return fmt.Errorf("project not found")
@@ -47,7 +47,7 @@ func deleteProject(accountId, projectName string) error {
 	accountUUID, _ := uuid.Parse(accountId)
 
 	if project.IsLive {
-		if err = killProject(accountId, project.Name, nil); err != nil {
+		if err = killProject(accountId, project.Name, s); err != nil {
 			return err
 		}
 	}

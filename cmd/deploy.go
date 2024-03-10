@@ -29,7 +29,6 @@ import (
 )
 
 // todo:
-// more checks around user disconnecting github app
 // Dynamic ports on vm
 
 type ProjectEnvs map[string]string
@@ -133,8 +132,8 @@ func deployProject(cmd *cobra.Command, project *models.Projects) {
 	}
 	s.Stop()
 
-	s.Start()
 	s.Prefix = "Deploying Application "
+	s.Start()
 	if err = deployAndStartApplication(deploymentOptions, remoteAppDir, project.Name); err != nil {
 		s.FinalMSG = "Application Deployment Failed\n"
 		s.Stop()
@@ -279,14 +278,14 @@ func updateProjectAndCreateEnvs(accountID string, project *models.Projects, upda
 
 func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 	project, _ := projects.GetProjectById(opts.ProjectId.String(), opts.AccountId)
-	ghRepoUrl := strings.Split(project.GithubRepoUrl, "/")
-	ghRepoName := strings.ReplaceAll(ghRepoUrl[len(ghRepoUrl)-1], ".git", "")
+	//ghRepoUrl := strings.Split(project.GithubRepoUrl, "/")
+	//ghRepoName := strings.ReplaceAll(ghRepoUrl[len(ghRepoUrl)-1], ".git", "")
 
 	appRootDirectory := files.GetCurrentPathRootDirectory()
 	scriptPath := filepath.Join(appRootDirectory, "/../scripts")
 	dockerFileScriptPath := fmt.Sprintf("%s/generate-dockerfile.sh", opts.DeploymentOptions.RemoteAppDir)
 	vmSetupScriptPath := fmt.Sprintf("%s/setup-ubuntu-vm.sh", opts.DeploymentOptions.RemoteAppDir)
-	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", ghRepoName)
+	appRemoteDirectory := opts.DeploymentOptions.RemoteHomeDir + fmt.Sprintf("/app/%s", project.Name)
 
 	client, err := establishSSHConnection(opts.DeploymentOptions)
 	if err != nil {
@@ -316,12 +315,14 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 
 	installationId, err := account.GetAccountInstallationId(opts.AccountId)
 	if err != nil {
-		return "", fmt.Errorf("failed to get GitHub installation ID: %v", err)
+		return "", fmt.Errorf("Failed to get GitHub installation ID: %v", err)
 	}
 
 	githubCloneUrl, err := github.GetRepositoryCloneUrl(installationId, project.GithubRepoUrl)
 	if err != nil {
-		return "", fmt.Errorf("failed to get GitHub repository clone URL: %v", err)
+		errCtx := err
+		_ = errCtx
+		return "", fmt.Errorf("Failed to get GitHub repository clone URL.\n Please connect account to github if disconnected with `wave-deploy connect-github`")
 	}
 
 	args := []string{

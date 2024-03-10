@@ -9,6 +9,7 @@ import (
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/hashers"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/random"
 	"github.com/Oluwatunmise-olat/WaveDeploy/pkg/structs"
+	"github.com/google/uuid"
 	"log"
 	"os"
 	"strings"
@@ -17,8 +18,13 @@ import (
 
 func IsAccountConnectedAlreadyToGithub(accountId string) bool {
 	githubAppRepository := respository.GithubAppsRepository{}
-	githubApp, _ := githubAppRepository.GetGithubAppByAccountId(accountId)
-	return githubApp != nil
+	githubApp, err := githubAppRepository.GetGithubAppByAccountId(accountId)
+
+	if err != nil && strings.Contains(err.Error(), "record not found") {
+		return false
+	}
+
+	return githubApp.Id != uuid.Nil
 }
 
 func GetConnectToGithubUrl(accountId string) string {
