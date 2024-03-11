@@ -357,8 +357,7 @@ func buildApplicationDockerfile(opts BuildApplicationOptions) (string, error) {
 		return "", err
 	}
 
-	out, err := client.Run(dockerFileGenerationCommand)
-	fmt.Println(string(out))
+	_, err = client.Run(dockerFileGenerationCommand)
 	if err != nil {
 		return "", err
 	}

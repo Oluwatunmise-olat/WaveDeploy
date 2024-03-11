@@ -151,8 +151,10 @@ func redeployProject(project *models.Projects, s *spinner.Spinner) error {
 	projectEnvs, err := projects.GetProjectEnvs(project.Id, accountUUID)
 
 	if len(projectEnvs) > 0 {
-		for key, value := range projectEnvs {
-			updateCmd += fmt.Sprintf(" --env %s=%s", key, value)
+		for _, row := range projectEnvs {
+			value, _ := hashers.DecryptIt(row.Value, os.Getenv("APP_KEY"))
+			updateCmd += fmt.Sprintf(" --env-rm %s", row.Key)
+			updateCmd += fmt.Sprintf(" --env-add %s=%s", row.Key, value)
 		}
 	}
 

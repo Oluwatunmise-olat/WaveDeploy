@@ -61,7 +61,7 @@ func PromptForProjectName() string {
 
 // PromptForProjectType prompts the user for the project type
 func PromptForProjectType() string {
-	selectRProjectTypePromptCmd := Prompt{label: "> Select project type ", items: []string{string(models.API), string(models.SPA)}}
+	selectRProjectTypePromptCmd := Prompt{label: "> Select project type ", items: []string{string(models.API), string(fmt.Sprintf("%s (Single Page Application)", models.SPA))}}
 	return GetPromptSelector(selectRProjectTypePromptCmd, nil)
 }
 
