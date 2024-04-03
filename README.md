@@ -1,5 +1,8 @@
 ### WaveDeploy
+
 Wave Deploy is a proof of concept that demonstrates the steps involved in building a very simple PAAS.
+
+[![Watch the video](https://www.loom.com/share/2c07aca6d5424afdb853f052358256a5?sid=39d7ac25-c6ab-480b-9af3-6d22b4eb26f1)](https://www.loom.com/share/2c07aca6d5424afdb853f052358256a5?sid=39d7ac25-c6ab-480b-9af3-6d22b4eb26f1)
 
 ## Documentation
 
@@ -8,16 +11,22 @@ For detailed documentation and usage instructions, please visit [here](https://o
 ## Prerequisites
 
 Before getting started, make sure you have the following prerequisites installed on your system:
+
 - [Go programming language](https://golang.org/doc/install)
 - MySQL
 
 ## Installation
+
 ### 1. Clone the Repository
+
 ```bash
 git clone https://github.com/Oluwatunmise-olat/WaveDeploy
 ```
+
 ### 2. Configure Environment Variables (Create a github app)
+
 Create a .env file in the root directory of the project and mirror .env.example:
+
 ```
 MYSQL_CONNECTION_STRING=
 ENVIRONMENT=<PRODUCTION, STAGING>
@@ -30,11 +39,15 @@ GITHUB_CLIENT_SECRET=
 PORT=
 GITHUB_APP_WEBHOOK_SECRET=
 ```
+
 ### 3. Run Migrations
+
 ```bash
 make db-migrate-up mysql_username=<YOUR USERNAME> mysql_password=<YOUR PASSWORD>
 ```
+
 ### 4. Up and Running
+
 ```bash
 # Cli
 go run main.go
@@ -43,6 +56,7 @@ go run main.go -serve-http true (Configure url on github)
 ```
 
 ## TODO
+
 - [ ] Domain Name Mapping in Caddy Configuration (_priority 3_).
 - [ ] Optimize deployment for varying deployment type (SPA AND API) (_priority 1_).
 - [ ] Auto-Scale Based on metrics from prometheus (would be a background worker) (_priority 5_).
